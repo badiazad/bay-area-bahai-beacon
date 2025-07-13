@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Loader } from "@googlemaps/js-api-loader";
 import { 
   Plus, 
   Edit, 
@@ -22,7 +23,9 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Download
+  Download,
+  Upload,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/layout/Navigation";
@@ -42,6 +45,7 @@ type Event = {
   host_email: string;
   max_attendees: number;
   tags: string[];
+  featured_image_url: string;
   created_by: string;
   _count?: {
     rsvps: number;
@@ -57,16 +61,18 @@ const Admin = () => {
     title: "",
     description: "",
     location: "",
-    address: "",
     start_date: "",
     end_date: "",
     calendar_type: "community_gathering",
     status: "published",
     host_name: "",
     host_email: "",
-    max_attendees: "",
-    tags: "",
+    featured_image_url: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -90,6 +96,45 @@ const Admin = () => {
 
     getSession();
   }, []);
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    const initAutocomplete = async () => {
+      if (!locationInputRef.current) return;
+
+      try {
+        const loader = new Loader({
+          apiKey: "AIzaSyBvF8GX2tY5QH9pM4V4Q1L8aX0H1I2J3K4", // Replace with your Google Maps API key
+          version: "weekly",
+          libraries: ["places"]
+        });
+
+        await loader.load();
+        
+        autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
+          locationInputRef.current,
+          {
+            types: ["establishment", "geocode"],
+            fields: ["formatted_address", "name", "place_id"]
+          }
+        );
+
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current?.getPlace();
+          if (place) {
+            setFormData(prev => ({
+              ...prev,
+              location: place.name || place.formatted_address || ""
+            }));
+          }
+        });
+      } catch (error) {
+        console.error("Error loading Google Maps:", error);
+      }
+    };
+
+    initAutocomplete();
+  }, [showCreateModal, editingEvent]);
 
   const hasAdminAccess = userRoles.includes('admin') || userRoles.includes('editor') || userRoles.includes('author');
 
@@ -116,12 +161,40 @@ const Admin = () => {
     enabled: hasAdminAccess,
   });
 
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `event-images/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('media')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('media')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const createEventMutation = useMutation({
     mutationFn: async (data: any) => {
+      let imageUrl = data.featured_image_url;
+      
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          imageUrl = await uploadImage(selectedImage);
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
       const eventData = {
         ...data,
-        max_attendees: data.max_attendees ? parseInt(data.max_attendees) : null,
-        tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : [],
+        featured_image_url: imageUrl || null,
         created_by: user?.id,
       };
 
@@ -132,6 +205,7 @@ const Admin = () => {
       toast({ title: "Event created successfully!" });
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setShowCreateModal(false);
+      setSelectedImage(null);
       resetForm();
     },
     onError: (error: Error) => {
@@ -145,10 +219,20 @@ const Admin = () => {
 
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      let imageUrl = data.featured_image_url;
+      
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          imageUrl = await uploadImage(selectedImage);
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
       const eventData = {
         ...data,
-        max_attendees: data.max_attendees ? parseInt(data.max_attendees) : null,
-        tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : [],
+        featured_image_url: imageUrl || null,
       };
 
       const { error } = await supabase.from("events").update(eventData).eq("id", id);
@@ -158,6 +242,7 @@ const Admin = () => {
       toast({ title: "Event updated successfully!" });
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setEditingEvent(null);
+      setSelectedImage(null);
       resetForm();
     },
     onError: (error: Error) => {
@@ -192,15 +277,13 @@ const Admin = () => {
       title: "",
       description: "",
       location: "",
-      address: "",
       start_date: "",
       end_date: "",
       calendar_type: "community_gathering",
       status: "published",
       host_name: "",
       host_email: "",
-      max_attendees: "",
-      tags: "",
+      featured_image_url: "",
     });
   };
 
@@ -210,15 +293,13 @@ const Admin = () => {
       title: event.title,
       description: event.description || "",
       location: event.location,
-      address: event.address || "",
       start_date: event.start_date.slice(0, 16),
       end_date: event.end_date ? event.end_date.slice(0, 16) : "",
       calendar_type: event.calendar_type,
       status: event.status,
       host_name: event.host_name,
       host_email: event.host_email,
-      max_attendees: event.max_attendees?.toString() || "",
-      tags: event.tags?.join(", ") || "",
+      featured_image_url: event.featured_image_url || "",
     });
   };
 
@@ -343,23 +424,65 @@ const Admin = () => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="location">Location *</Label>
-                        <Input
-                          id="location"
-                          value={formData.location}
-                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="address">Full Address</Label>
-                        <Input
-                          id="address"
-                          value={formData.address}
-                          onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                        />
+                    <div>
+                      <Label htmlFor="location">Location *</Label>
+                      <Input
+                        ref={locationInputRef}
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        placeholder="Start typing to search for a location..."
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="image">Event Image</Label>
+                      <div className="space-y-2">
+                        {(formData.featured_image_url || selectedImage) && (
+                          <div className="relative inline-block">
+                            <img 
+                              src={selectedImage ? URL.createObjectURL(selectedImage) : formData.featured_image_url} 
+                              alt="Event preview" 
+                              className="h-32 w-48 object-cover rounded-md border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1"
+                              onClick={() => {
+                                setSelectedImage(null);
+                                setFormData(prev => ({ ...prev, featured_image_url: "" }));
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setSelectedImage(file);
+                                setFormData(prev => ({ ...prev, featured_image_url: "" }));
+                              }
+                            }}
+                            className="hidden"
+                            id="image-upload"
+                          />
+                          <Label htmlFor="image-upload" className="cursor-pointer">
+                            <Button type="button" variant="outline" asChild>
+                              <span>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Image
+                              </span>
+                            </Button>
+                          </Label>
+                        </div>
                       </div>
                     </div>
 
@@ -407,48 +530,28 @@ const Admin = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="max_attendees">Max Attendees</Label>
-                        <Input
-                          id="max_attendees"
-                          type="number"
-                          value={formData.max_attendees}
-                          onChange={(e) => setFormData(prev => ({ ...prev, max_attendees: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="status">Status</Label>
-                        <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="published">Published</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
                     <div>
-                      <Label htmlFor="tags">Tags (comma separated)</Label>
-                      <Input
-                        id="tags"
-                        value={formData.tags}
-                        onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
-                        placeholder="e.g. youth, prayer, discussion"
-                      />
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="published">Published</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="flex gap-2 pt-4">
-                      <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending}>
-                        {editingEvent ? "Update Event" : "Create Event"}
+                      <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending || uploadingImage}>
+                        {uploadingImage ? "Uploading..." : editingEvent ? "Update Event" : "Create Event"}
                       </Button>
                       <Button type="button" variant="outline" onClick={() => {
                         setShowCreateModal(false);
                         setEditingEvent(null);
+                        setSelectedImage(null);
                         resetForm();
                       }}>
                         Cancel

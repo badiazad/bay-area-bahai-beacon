@@ -95,6 +95,186 @@ export type Database = {
         }
         Relationships: []
       }
+      event_reminders: {
+        Row: {
+          error_message: string | null
+          event_id: string
+          id: string
+          recipient_email: string
+          reminder_type: string
+          sent_at: string
+          success: boolean
+        }
+        Insert: {
+          error_message?: string | null
+          event_id: string
+          id?: string
+          recipient_email: string
+          reminder_type: string
+          sent_at?: string
+          success?: boolean
+        }
+        Update: {
+          error_message?: string | null
+          event_id?: string
+          id?: string
+          recipient_email?: string
+          reminder_type?: string
+          sent_at?: string
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_rsvps: {
+        Row: {
+          created_at: string
+          dietary_restrictions: string | null
+          email: string
+          event_id: string
+          guest_count: number
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          reminder_email: boolean | null
+          reminder_sms: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          dietary_restrictions?: string | null
+          email: string
+          event_id: string
+          guest_count?: number
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          reminder_email?: boolean | null
+          reminder_sms?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          dietary_restrictions?: string | null
+          email?: string
+          event_id?: string
+          guest_count?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          reminder_email?: boolean | null
+          reminder_sms?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          address: string | null
+          calendar_type: Database["public"]["Enums"]["event_calendar"]
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          featured_image_url: string | null
+          host_email: string
+          host_name: string
+          id: string
+          is_recurring: boolean
+          latitude: number | null
+          location: string
+          longitude: number | null
+          max_attendees: number | null
+          parent_event_id: string | null
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_type: Database["public"]["Enums"]["event_recurrence"]
+          slug: string
+          start_date: string
+          status: Database["public"]["Enums"]["event_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          calendar_type?: Database["public"]["Enums"]["event_calendar"]
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          featured_image_url?: string | null
+          host_email: string
+          host_name: string
+          id?: string
+          is_recurring?: boolean
+          latitude?: number | null
+          location: string
+          longitude?: number | null
+          max_attendees?: number | null
+          parent_event_id?: string | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_type?: Database["public"]["Enums"]["event_recurrence"]
+          slug: string
+          start_date: string
+          status?: Database["public"]["Enums"]["event_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          calendar_type?: Database["public"]["Enums"]["event_calendar"]
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          featured_image_url?: string | null
+          host_email?: string
+          host_name?: string
+          id?: string
+          is_recurring?: boolean
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          max_attendees?: number | null
+          parent_event_id?: string | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_type?: Database["public"]["Enums"]["event_recurrence"]
+          slug?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_parent_event_id_fkey"
+            columns: ["parent_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instagram_media: {
         Row: {
           cached_at: string | null
@@ -226,6 +406,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_event_slug: {
+        Args: { title: string }
+        Returns: string
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"][]
@@ -241,6 +425,16 @@ export type Database = {
     Enums: {
       content_status: "draft" | "pending" | "published" | "archived"
       content_type: "page" | "post" | "event" | "gallery"
+      event_calendar:
+        | "devotional"
+        | "youth_class"
+        | "childrens_class"
+        | "study_circle"
+        | "holy_day"
+        | "community_gathering"
+        | "other"
+      event_recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly"
+      event_status: "draft" | "published" | "cancelled"
       user_role: "admin" | "editor" | "author"
     }
     CompositeTypes: {
@@ -371,6 +565,17 @@ export const Constants = {
     Enums: {
       content_status: ["draft", "pending", "published", "archived"],
       content_type: ["page", "post", "event", "gallery"],
+      event_calendar: [
+        "devotional",
+        "youth_class",
+        "childrens_class",
+        "study_circle",
+        "holy_day",
+        "community_gathering",
+        "other",
+      ],
+      event_recurrence: ["none", "daily", "weekly", "monthly", "yearly"],
+      event_status: ["draft", "published", "cancelled"],
       user_role: ["admin", "editor", "author"],
     },
   },

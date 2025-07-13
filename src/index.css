@@ -9,46 +9,46 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Core color palette - Inspired by nature and spiritual growth */
-    --background: 120 20% 98%;
-    --foreground: 160 30% 15%;
+    /* Core color palette - Deep forest green inspired by nature and spiritual growth */
+    --background: 120 15% 97%;
+    --foreground: 160 40% 12%;
 
-    --card: 120 25% 97%;
-    --card-foreground: 160 30% 15%;
+    --card: 120 20% 96%;
+    --card-foreground: 160 40% 12%;
 
-    --popover: 120 25% 97%;
-    --popover-foreground: 160 30% 15%;
+    --popover: 120 20% 96%;
+    --popover-foreground: 160 40% 12%;
 
     /* Primary - Deep forest green representing growth and stability */
-    --primary: 150 60% 25%;
-    --primary-foreground: 120 20% 98%;
+    --primary: 155 85% 15%;
+    --primary-foreground: 120 15% 97%;
 
-    /* Secondary - Soft sage green for warmth and approachability */
-    --secondary: 130 25% 88%;
-    --secondary-foreground: 160 30% 15%;
+    /* Secondary - Rich sage green for warmth and approachability */
+    --secondary: 140 30% 85%;
+    --secondary-foreground: 160 40% 12%;
 
-    /* Muted - Light natural green for subtle backgrounds */
-    --muted: 125 20% 94%;
-    --muted-foreground: 150 15% 45%;
+    /* Muted - Natural green for subtle backgrounds */
+    --muted: 130 25% 92%;
+    --muted-foreground: 150 20% 40%;
 
-    /* Accent - Vibrant emerald for highlights and call-to-actions */
-    --accent: 160 70% 35%;
-    --accent-foreground: 120 20% 98%;
+    /* Accent - Vibrant deep emerald for highlights */
+    --accent: 165 80% 25%;
+    --accent-foreground: 120 15% 97%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 130 20% 85%;
-    --input: 130 20% 90%;
-    --ring: 160 70% 35%;
+    --border: 140 25% 80%;
+    --input: 140 25% 85%;
+    --ring: 165 80% 25%;
 
     --radius: 0.75rem;
 
-    /* Community-inspired gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(150 60% 25%), hsl(160 70% 35%));
-    --gradient-community: linear-gradient(135deg, hsl(130 25% 88%), hsl(120 20% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(160 70% 35%), hsl(150 60% 25%));
-    --gradient-warm: linear-gradient(135deg, hsl(40 80% 60%), hsl(160 70% 35%));
+    /* Community-inspired gradients with deeper greens */
+    --gradient-primary: linear-gradient(135deg, hsl(155 85% 15%), hsl(165 80% 25%));
+    --gradient-community: linear-gradient(135deg, hsl(140 30% 85%), hsl(120 15% 97%));
+    --gradient-hero: linear-gradient(135deg, hsl(165 80% 25%), hsl(155 85% 15%));
+    --gradient-warm: linear-gradient(135deg, hsl(45 85% 55%), hsl(165 80% 25%));
 
     /* Elegant shadows with green undertones */
     --shadow-soft: 0 4px 20px hsl(150 30% 25% / 0.08);

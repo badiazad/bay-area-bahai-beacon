@@ -43,6 +43,16 @@ const ContactForm = () => {
         throw error;
       }
 
+      // Send emails via edge function
+      const { error: emailError } = await supabase.functions.invoke('send-contact-emails', {
+        body: formData
+      });
+
+      if (emailError) {
+        console.error("Email error:", emailError);
+        // Don't throw here - form submission succeeded even if email fails
+      }
+
       // Reset form
       setFormData({
         name: "",
@@ -55,7 +65,7 @@ const ContactForm = () => {
 
       toast({
         title: "Message sent successfully!",
-        description: "Thank you for reaching out. We'll get back to you soon.",
+        description: "Thank you for reaching out. Check your email for confirmation and we'll get back to you soon.",
       });
 
     } catch (error) {

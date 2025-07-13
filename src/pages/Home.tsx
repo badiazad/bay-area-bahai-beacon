@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/layout/Navigation";
-import heroImage from "@/assets/hero-community.jpg";
+import heroImage from "@/assets/bahai-community-hero.jpg";
 import { 
   Calendar, 
   Users, 

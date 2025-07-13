@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 import { Loader } from "@googlemaps/js-api-loader";
 import { 
   Plus, 
@@ -46,6 +47,10 @@ type Event = {
   max_attendees: number;
   tags: string[];
   featured_image_url: string;
+  is_recurring: boolean;
+  recurrence_type: string;
+  recurrence_interval: number;
+  recurrence_end_date: string;
   created_by: string;
   _count?: {
     rsvps: number;
@@ -68,6 +73,10 @@ const Admin = () => {
     host_name: "",
     host_email: "",
     featured_image_url: "",
+    is_recurring: false,
+    recurrence_type: "none",
+    recurrence_interval: 1,
+    recurrence_end_date: "",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -196,6 +205,10 @@ const Admin = () => {
         ...data,
         featured_image_url: imageUrl || null,
         created_by: user?.id,
+        is_recurring: data.is_recurring,
+        recurrence_type: data.is_recurring ? data.recurrence_type : 'none',
+        recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
+        recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
       };
 
       const { error } = await supabase.from("events").insert(eventData);
@@ -233,6 +246,10 @@ const Admin = () => {
       const eventData = {
         ...data,
         featured_image_url: imageUrl || null,
+        is_recurring: data.is_recurring,
+        recurrence_type: data.is_recurring ? data.recurrence_type : 'none',
+        recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
+        recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
       };
 
       const { error } = await supabase.from("events").update(eventData).eq("id", id);
@@ -284,6 +301,10 @@ const Admin = () => {
       host_name: "",
       host_email: "",
       featured_image_url: "",
+      is_recurring: false,
+      recurrence_type: "none",
+      recurrence_interval: 1,
+      recurrence_end_date: "",
     });
   };
 
@@ -300,6 +321,10 @@ const Admin = () => {
       host_name: event.host_name,
       host_email: event.host_email,
       featured_image_url: event.featured_image_url || "",
+      is_recurring: event.is_recurring || false,
+      recurrence_type: event.recurrence_type || "none",
+      recurrence_interval: event.recurrence_interval || 1,
+      recurrence_end_date: event.recurrence_end_date ? event.recurrence_end_date.slice(0, 10) : "",
     });
   };
 
@@ -484,6 +509,75 @@ const Admin = () => {
                           </Label>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="space-y-4 border-t pt-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="is_recurring"
+                          checked={formData.is_recurring}
+                          onCheckedChange={(checked) => setFormData(prev => ({ 
+                            ...prev, 
+                            is_recurring: checked,
+                            recurrence_type: checked ? "weekly" : "none"
+                          }))}
+                        />
+                        <Label htmlFor="is_recurring">Recurring Event</Label>
+                      </div>
+
+                      {formData.is_recurring && (
+                        <div className="space-y-4 ml-6 p-4 bg-muted/30 rounded-lg">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="recurrence_type">Repeat</Label>
+                              <Select 
+                                value={formData.recurrence_type} 
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, recurrence_type: value }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="daily">Daily</SelectItem>
+                                  <SelectItem value="weekly">Weekly</SelectItem>
+                                  <SelectItem value="monthly">Monthly</SelectItem>
+                                  <SelectItem value="yearly">Yearly</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label htmlFor="recurrence_interval">Every</Label>
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  id="recurrence_interval"
+                                  type="number"
+                                  min="1"
+                                  max="99"
+                                  value={formData.recurrence_interval}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, recurrence_interval: parseInt(e.target.value) || 1 }))}
+                                  className="w-20"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {formData.recurrence_type === "daily" && (formData.recurrence_interval === 1 ? "day" : "days")}
+                                  {formData.recurrence_type === "weekly" && (formData.recurrence_interval === 1 ? "week" : "weeks")}
+                                  {formData.recurrence_type === "monthly" && (formData.recurrence_interval === 1 ? "month" : "months")}
+                                  {formData.recurrence_type === "yearly" && (formData.recurrence_interval === 1 ? "year" : "years")}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="recurrence_end_date">End Date (optional)</Label>
+                            <Input
+                              id="recurrence_end_date"
+                              type="date"
+                              value={formData.recurrence_end_date}
+                              onChange={(e) => setFormData(prev => ({ ...prev, recurrence_end_date: e.target.value }))}
+                              min={formData.start_date ? formData.start_date.split('T')[0] : undefined}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

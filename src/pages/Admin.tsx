@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Loader } from "@googlemaps/js-api-loader";
 import { 
   Plus, 
   Edit, 
@@ -106,20 +106,18 @@ const Admin = () => {
     getSession();
   }, []);
 
-  // Initialize Google Places Autocomplete
+  // Initialize Google Places Autocomplete with better error handling
   useEffect(() => {
     const initAutocomplete = async () => {
       if (!locationInputRef.current) return;
 
       try {
-        const loader = new Loader({
-          apiKey: "AIzaSyBvF8GX2tY5QH9pM4V4Q1L8aX0H1I2J3K4", // Replace with your Google Maps API key
-          version: "weekly",
-          libraries: ["places"]
-        });
+        // Check if Google Maps is already loaded
+        if (!(window as any).google?.maps?.places) {
+          console.log("Google Maps API not available - location autocomplete disabled");
+          return;
+        }
 
-        await loader.load();
-        
         autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
           locationInputRef.current,
           {
@@ -137,12 +135,18 @@ const Admin = () => {
             }));
           }
         });
+        
+        console.log("Google Maps autocomplete initialized successfully");
       } catch (error) {
-        console.error("Error loading Google Maps:", error);
+        console.error("Error initializing Google Maps autocomplete:", error);
       }
     };
 
-    initAutocomplete();
+    // Only initialize when modal is open
+    if (showCreateModal || editingEvent) {
+      // Add a small delay to ensure DOM is ready
+      setTimeout(initAutocomplete, 100);
+    }
   }, [showCreateModal, editingEvent]);
 
   const hasAdminAccess = userRoles.includes('admin') || userRoles.includes('editor') || userRoles.includes('author');
@@ -179,7 +183,10 @@ const Admin = () => {
       .from('media')
       .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      throw uploadError;
+    }
 
     const { data } = supabase.storage
       .from('media')
@@ -190,12 +197,18 @@ const Admin = () => {
 
   const createEventMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log("Creating event with data:", data);
       let imageUrl = data.featured_image_url;
       
       if (selectedImage) {
+        console.log("Uploading image:", selectedImage.name);
         setUploadingImage(true);
         try {
           imageUrl = await uploadImage(selectedImage);
+          console.log("Image uploaded successfully:", imageUrl);
+        } catch (error) {
+          console.error("Image upload failed:", error);
+          throw new Error("Failed to upload image: " + (error as Error).message);
         } finally {
           setUploadingImage(false);
         }
@@ -209,12 +222,19 @@ const Admin = () => {
         recurrence_type: data.is_recurring ? data.recurrence_type : 'none',
         recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
         recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
+        slug: data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
       };
 
+      console.log("Final event data:", eventData);
+
       const { error } = await supabase.from("events").insert(eventData);
-      if (error) throw error;
+      if (error) {
+        console.error("Database insert error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log("Event created successfully");
       toast({ title: "Event created successfully!" });
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setShowCreateModal(false);
@@ -222,6 +242,7 @@ const Admin = () => {
       resetForm();
     },
     onError: (error: Error) => {
+      console.error("Event creation error:", error);
       toast({
         title: "Error creating event",
         description: error.message,
@@ -232,12 +253,18 @@ const Admin = () => {
 
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      console.log("Updating event with data:", data);
       let imageUrl = data.featured_image_url;
       
       if (selectedImage) {
+        console.log("Uploading new image:", selectedImage.name);
         setUploadingImage(true);
         try {
           imageUrl = await uploadImage(selectedImage);
+          console.log("Image uploaded successfully:", imageUrl);
+        } catch (error) {
+          console.error("Image upload failed:", error);
+          throw new Error("Failed to upload image: " + (error as Error).message);
         } finally {
           setUploadingImage(false);
         }
@@ -252,10 +279,16 @@ const Admin = () => {
         recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
       };
 
+      console.log("Final update data:", eventData);
+
       const { error } = await supabase.from("events").update(eventData).eq("id", id);
-      if (error) throw error;
+      if (error) {
+        console.error("Database update error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log("Event updated successfully");
       toast({ title: "Event updated successfully!" });
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setEditingEvent(null);
@@ -263,6 +296,7 @@ const Admin = () => {
       resetForm();
     },
     onError: (error: Error) => {
+      console.error("Event update error:", error);
       toast({
         title: "Error updating event",
         description: error.message,
@@ -328,12 +362,18 @@ const Admin = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingEvent) {
-      updateEventMutation.mutate({ id: editingEvent.id, data: formData });
-    } else {
-      createEventMutation.mutate(formData);
+    console.log("Form submitted", { formData, selectedImage, editingEvent });
+    
+    try {
+      if (editingEvent) {
+        await updateEventMutation.mutateAsync({ id: editingEvent.id, data: formData });
+      } else {
+        await createEventMutation.mutateAsync(formData);
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
     }
   };
 
@@ -345,6 +385,8 @@ const Admin = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  const isSubmitting = createEventMutation.isPending || updateEventMutation.isPending || uploadingImage;
 
   if (!user) {
     return (
@@ -456,9 +498,12 @@ const Admin = () => {
                         id="location"
                         value={formData.location}
                         onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        placeholder="Start typing to search for a location..."
+                        placeholder="Enter location (Google autocomplete not available)"
                         required
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Note: Location autocomplete requires Google Maps API configuration
+                      </p>
                     </div>
 
                     <div>
@@ -492,6 +537,7 @@ const Admin = () => {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
+                                console.log("Image selected:", file.name, file.size);
                                 setSelectedImage(file);
                                 setFormData(prev => ({ ...prev, featured_image_url: "" }));
                               }
@@ -639,8 +685,10 @@ const Admin = () => {
                     </div>
 
                     <div className="flex gap-2 pt-4">
-                      <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending || uploadingImage}>
-                        {uploadingImage ? "Uploading..." : editingEvent ? "Update Event" : "Create Event"}
+                      <Button type="submit" disabled={isSubmitting}>
+                        {uploadingImage ? "Uploading Image..." : 
+                         isSubmitting ? "Saving..." : 
+                         editingEvent ? "Update Event" : "Create Event"}
                       </Button>
                       <Button type="button" variant="outline" onClick={() => {
                         setShowCreateModal(false);

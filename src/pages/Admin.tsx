@@ -315,14 +315,20 @@ const Admin = () => {
       };
 
       console.log("Final event data:", eventData);
+      console.log("About to insert into database...");
 
-      const { error } = await supabase.from("events").insert(eventData);
-      if (error) {
-        console.error("Database insert error:", error);
-        throw new Error(`Database error: ${error.message}`);
+      try {
+        const { data: insertedData, error } = await supabase.from("events").insert(eventData).select();
+        if (error) {
+          console.error("Database insert error:", error);
+          throw new Error(`Database error: ${error.message}`);
+        }
+        console.log("Event created successfully in database:", insertedData);
+        return insertedData;
+      } catch (dbError) {
+        console.error("Database operation failed:", dbError);
+        throw dbError;
       }
-      
-      console.log("Event created successfully in database");
     },
     onSuccess: () => {
       console.log("Event created successfully");
@@ -469,12 +475,16 @@ const Admin = () => {
     
     try {
       if (editingEvent) {
+        console.log("Calling update mutation...");
         await updateEventMutation.mutateAsync({ id: editingEvent.id, data: formData });
       } else {
+        console.log("Calling create mutation...");
         await createEventMutation.mutateAsync(formData);
       }
+      console.log("Mutation completed successfully");
     } catch (error) {
       console.error("Submit error:", error);
+      // Error handling is done in mutation onError callbacks
     }
   };
 

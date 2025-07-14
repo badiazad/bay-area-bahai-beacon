@@ -11,7 +11,7 @@ import { format } from "date-fns";
 import Navigation from "@/components/layout/Navigation";
 import { EventRSVPModal } from "@/components/events/EventRSVPModal";
 import { EventCalendarView } from "@/components/events/EventCalendarView";
-import EventMiniMap from "@/components/events/EventMiniMap";
+import EventLocationSection from "@/components/events/EventLocationSection";
 
 type Event = {
   id: string;
@@ -231,15 +231,11 @@ const Events = () => {
                     </div>
                   </div>
 
-                  {/* Mini Map */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Location</h4>
-                    <EventMiniMap 
-                      location={event.location} 
-                      address={event.address}
-                      className="w-full h-24"
-                    />
-                  </div>
+                  {/* Location Section */}
+                  <EventLocationSection 
+                    location={event.location} 
+                    address={event.address}
+                  />
 
                   {event.description && (
                     <p className="text-sm line-clamp-3">{event.description}</p>

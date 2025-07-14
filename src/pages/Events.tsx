@@ -43,45 +43,61 @@ const Events = () => {
   const { data: events, isLoading, error } = useQuery({
     queryKey: ["events", searchTerm, calendarFilter],
     queryFn: async () => {
-      console.log("Fetching events with filters:", { searchTerm, calendarFilter });
+      console.log("🔍 Starting events query with filters:", { searchTerm, calendarFilter });
       
-      let query = supabase
-        .from("events")
-        .select(`
-          *,
-          event_rsvps(count)
-        `)
-        .eq("status", "published")
-        .order("start_date", { ascending: true });
+      try {
+        let query = supabase
+          .from("events")
+          .select(`
+            *,
+            event_rsvps(count)
+          `)
+          .eq("status", "published")
+          .order("start_date", { ascending: true });
 
-      if (searchTerm) {
-        query = query.or(
-          `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,tags.cs.{${searchTerm}}`
-        );
-      }
+        console.log("📊 Base query created");
 
-      if (calendarFilter !== "all") {
-        query = query.eq("calendar_type", calendarFilter as any);
-      }
-
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error("Error fetching events:", error);
-        throw error;
-      }
-
-      console.log("Events fetched successfully:", data?.length || 0, "events");
-
-      return data?.map(event => ({
-        ...event,
-        _count: {
-          rsvps: event.event_rsvps?.[0]?.count || 0
+        if (searchTerm) {
+          query = query.or(
+            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,tags.cs.{${searchTerm}}`
+          );
+          console.log("🔍 Search filter applied:", searchTerm);
         }
-      })) || [];
+
+        if (calendarFilter !== "all") {
+          query = query.eq("calendar_type", calendarFilter as any);
+          console.log("📅 Calendar filter applied:", calendarFilter);
+        }
+
+        console.log("🚀 Executing query...");
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error("❌ Query error:", error);
+          throw error;
+        }
+
+        console.log("✅ Query successful! Raw data:", data);
+        console.log("📈 Events found:", data?.length || 0);
+
+        const processedEvents = data?.map(event => ({
+          ...event,
+          _count: {
+            rsvps: event.event_rsvps?.[0]?.count || 0
+          }
+        })) || [];
+
+        console.log("🎯 Processed events:", processedEvents);
+        return processedEvents;
+        
+      } catch (queryError) {
+        console.error("💥 Query function error:", queryError);
+        throw queryError;
+      }
     },
     retry: 3,
-    retryDelay: 1000,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const handleRSVP = (event: Event) => {
@@ -154,7 +170,20 @@ const Events = () => {
     { value: "other", label: "Other" },
   ];
 
+  console.log("🎬 Events page render - State:", { 
+    isLoading, 
+    hasError: !!error, 
+    eventsCount: events?.length || 0,
+    searchTerm,
+    calendarFilter 
+  });
+
+  if (error) {
+    console.error("💥 Events page error details:", error);
+  }
+
   if (isLoading) {
+    console.log("⏳ Showing loading state");
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -162,6 +191,9 @@ const Events = () => {
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p>Loading events...</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Fetching community events from database...
+            </p>
           </div>
         </div>
       </div>
@@ -169,20 +201,25 @@ const Events = () => {
   }
 
   if (error) {
-    console.error("Events page error:", error);
+    console.error("❌ Rendering error state");
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Community Events</h1>
-            <p className="text-muted-foreground">Unable to load events. Please try again later.</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-            >
-              Retry
-            </button>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-destructive font-medium">Unable to load events</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Error: {error.message || 'Unknown error occurred'}
+              </p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         </div>
       </div>

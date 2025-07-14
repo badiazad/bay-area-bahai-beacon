@@ -47,12 +47,10 @@ const Events = () => {
       console.log("🔍 Starting events query with filters:", { searchTerm, calendarFilter });
       
       try {
+        // Simplified query - remove the RSVP count join for now to improve performance
         let query = supabase
           .from("events")
-          .select(`
-            *,
-            event_rsvps(count)
-          `)
+          .select("*")
           .eq("status", "published")
           .order("start_date", { ascending: true });
 
@@ -81,10 +79,12 @@ const Events = () => {
         console.log("✅ Query successful! Raw data:", data);
         console.log("📈 Events found:", data?.length || 0);
 
+        // For now, set RSVP count to 0 to improve performance
+        // We can fetch RSVP counts separately if needed
         const processedEvents = data?.map(event => ({
           ...event,
           _count: {
-            rsvps: event.event_rsvps?.[0]?.count || 0
+            rsvps: 0 // Placeholder - can be fetched separately for better performance
           }
         })) || [];
 
@@ -96,13 +96,13 @@ const Events = () => {
         throw queryError;
       }
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    retry: 2, // Reduced retry attempts
+    retryDelay: 1000, // Fixed 1 second retry delay
+    staleTime: 2 * 60 * 1000, // Reduced to 2 minutes
+    gcTime: 5 * 60 * 1000, // Reduced to 5 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true, // Allow refetch on mount
+    refetchOnReconnect: true, // Allow refetch on reconnect
   });
 
   const handleRSVP = (event: Event) => {

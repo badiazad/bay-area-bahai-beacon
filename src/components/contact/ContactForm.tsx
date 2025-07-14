@@ -242,10 +242,6 @@ const ContactForm = () => {
                   <p className="text-muted-foreground mb-4">
                     You can use the contact form, call us, or simply stop by our center during office hours.
                   </p>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Response time:</strong> Within 24 hours</p>
-                    <p><strong>Languages:</strong> English, Spanish, Persian, and more</p>
-                  </div>
                 </CardContent>
               </Card>
             </div>

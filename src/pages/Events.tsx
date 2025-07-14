@@ -44,47 +44,15 @@ const Events = () => {
   const { data: events, isLoading, error, refetch } = useQuery<Event[]>({
     queryKey: ["events", searchTerm, calendarFilter],
     queryFn: async (): Promise<Event[]> => {
-      console.log("🔍 Starting events query with filters:", { searchTerm, calendarFilter });
+      console.log("🔍 Starting simplified events query");
       
-      // Add a timeout promise to prevent hanging queries
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Query timeout after 10 seconds")), 10000)
-      );
-      
-      const queryPromise = (async (): Promise<Event[]> => {
-        let query = supabase
+      try {
+        // Use a much simpler query first
+        const { data, error } = await supabase
           .from("events")
-          .select(`
-            id,
-            title,
-            description,
-            location,
-            start_date,
-            end_date,
-            calendar_type,
-            featured_image_url,
-            host_name,
-            host_email,
-            status,
-            slug,
-            created_at,
-            created_by
-          `)
+          .select("*")
           .eq("status", "published")
-          .order("start_date", { ascending: true })
-          .limit(50); // Add a reasonable limit
-
-        if (searchTerm) {
-          query = query.or(
-            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`
-          );
-        }
-
-        if (calendarFilter !== "all") {
-          query = query.eq("calendar_type", calendarFilter as any);
-        }
-
-        const { data, error } = await query;
+          .order("start_date", { ascending: true });
         
         if (error) {
           console.error("❌ Query error:", error);
@@ -93,24 +61,38 @@ const Events = () => {
 
         console.log("✅ Events loaded:", data?.length || 0);
         
-        return data?.map(event => ({
+        // Apply filters in JavaScript instead of in the database query
+        let filteredEvents = data || [];
+        
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          filteredEvents = filteredEvents.filter(event => 
+            event.title?.toLowerCase().includes(searchLower) ||
+            event.description?.toLowerCase().includes(searchLower) ||
+            event.location?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        if (calendarFilter !== "all") {
+          filteredEvents = filteredEvents.filter(event => 
+            event.calendar_type === calendarFilter
+          );
+        }
+        
+        return filteredEvents.map(event => ({
           ...event,
           _count: { rsvps: 0 }
-        })) || [];
-      })();
-
-      // Race between the query and timeout
-      return Promise.race([queryPromise, timeoutPromise]);
+        }));
+        
+      } catch (error) {
+        console.error("💥 Query function error:", error);
+        throw error;
+      }
     },
-    retry: (failureCount, error) => {
-      console.log(`🔄 Query retry ${failureCount}, error:`, error.message);
-      return failureCount < 2; // Only retry twice
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    throwOnError: false, // Don't throw errors, handle them gracefully
   });
 
   const handleRSVP = (event: Event) => {

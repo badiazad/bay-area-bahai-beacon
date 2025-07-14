@@ -549,7 +549,14 @@ const Admin = () => {
           <TabsContent value="events" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Event Management</h2>
-              <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+              <Dialog open={showCreateModal || !!editingEvent} onOpenChange={(open) => {
+                if (!open) {
+                  setShowCreateModal(false);
+                  setEditingEvent(null);
+                  setSelectedImage(null);
+                  resetForm();
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button onClick={resetForm}>
                     <Plus className="h-4 w-4 mr-2" />

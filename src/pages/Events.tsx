@@ -27,6 +27,8 @@ type Event = {
   host_email: string;
   max_attendees: number;
   tags: string[];
+  latitude?: number;
+  longitude?: number;
   _count?: {
     rsvps: number;
   };
@@ -84,7 +86,35 @@ const Events = () => {
       `Hi ${event.host_name},\n\nI have a question about the "${event.title}" event scheduled for ${formatDate(event.start_date)} at ${event.location}.\n\n${event.description ? `Event Description: ${event.description}\n\n` : ''}Please let me know:\n\nThank you!\n\nBest regards`
     );
     
-    window.location.href = `mailto:${event.host_email}?subject=${subject}&body=${body}`;
+    window.open(`mailto:${event.host_email}?subject=${subject}&body=${body}`, "_blank");
+  };
+
+  const generateCalendarUrl = (event: Event, type: "google" | "outlook") => {
+    const startDate = new Date(event.start_date);
+    const endDate = event.end_date ? new Date(event.end_date) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+    
+    const details = `${event.description || ''}\n\nHost: ${event.host_name}\nLocation: ${event.location}${event.address ? `\nAddress: ${event.address}` : ''}`;
+    
+    if (type === "google") {
+      const start = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const end = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(event.location)}`;
+    }
+    
+    if (type === "outlook") {
+      const start = startDate.toISOString();
+      const end = endDate.toISOString();
+      return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(event.title)}&startdt=${start}&enddt=${end}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(event.location)}`;
+    }
+    
+    return "#";
+  };
+
+  const generateMapUrl = (event: Event) => {
+    if (event.latitude && event.longitude) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`;
+    }
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -223,7 +253,18 @@ const Events = () => {
                     </div>
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-2" />
-                      {event.location}
+                      <span>{event.location}</span>
+                      {event.address && (
+                        <span className="text-muted-foreground">
+                          {" - "}
+                          <button 
+                            onClick={() => window.open(generateMapUrl(event), "_blank")}
+                            className="underline hover:text-foreground transition-colors"
+                          >
+                            {event.address}
+                          </button>
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center">
                       <Users className="h-4 w-4 mr-2" />
@@ -250,21 +291,47 @@ const Events = () => {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="flex gap-2">
-                  <Button onClick={() => handleRSVP(event)} className="flex-1">
+                <CardFooter className="flex flex-col gap-3">
+                  <Button onClick={() => handleRSVP(event)} className="w-full">
                     RSVP
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEmailHost(event)}
-                    title={`Email ${event.host_name}`}
-                  >
-                    <Mail className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Calendar className="h-4 w-4" />
-                  </Button>
+                  
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(generateCalendarUrl(event, "google"), "_blank")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Google Cal
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(generateCalendarUrl(event, "outlook"), "_blank")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Outlook
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(generateMapUrl(event), "_blank")}
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Directions
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEmailHost(event)}
+                      title={`Email ${event.host_name}`}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Contact Host
+                    </Button>
+                  </div>
                 </CardFooter>
               </Card>
             ))}

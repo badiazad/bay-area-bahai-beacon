@@ -56,13 +56,18 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
       if (error) throw error;
 
       // Send confirmation email and calendar invite
-      await supabase.functions.invoke("send-event-confirmation", {
-        body: {
-          event_id: event.id,
-          attendee_email: data.email,
-          attendee_name: data.name,
-        },
-      });
+      try {
+        await supabase.functions.invoke("send-event-confirmation", {
+          body: {
+            event_id: event.id,
+            attendee_email: data.email,
+            attendee_name: data.name,
+          },
+        });
+      } catch (emailError) {
+        console.warn("Email confirmation failed:", emailError);
+        // Don't fail the RSVP if email fails
+      }
     },
     onSuccess: () => {
       toast({
@@ -238,44 +243,6 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
           </div>
         </form>
 
-        {/* Quick Actions */}
-        <div className="border-t pt-4 space-y-3">
-          <h4 className="font-medium">Quick Actions</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(generateCalendarUrl("google"), "_blank")}
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Google Cal
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(generateCalendarUrl("outlook"), "_blank")}
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Outlook
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(generateMapUrl(), "_blank")}
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              Directions
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(`mailto:${event.host_name}`, "_blank")}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Contact Host
-            </Button>
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

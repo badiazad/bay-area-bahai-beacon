@@ -153,7 +153,8 @@ const Admin = () => {
         };
         
         script.onerror = (error) => {
-          console.error("Error loading Google Maps config script:", error);
+          console.warn("Google Maps config script failed to load, using regular text input:", error);
+          // Don't let this error prevent the rest of the app from working
         };
         
         document.head.appendChild(script);
@@ -491,15 +492,18 @@ const Admin = () => {
     try {
       if (editingEvent) {
         console.log("Calling update mutation...");
-        await updateEventMutation.mutateAsync({ id: editingEvent.id, data: formData });
+        updateEventMutation.mutate({ id: editingEvent.id, data: formData });
       } else {
         console.log("Calling create mutation...");
-        await createEventMutation.mutateAsync(formData);
+        createEventMutation.mutate(formData);
       }
-      console.log("Mutation completed successfully");
     } catch (error) {
       console.error("Submit error:", error);
-      // Error handling is done in mutation onError callbacks
+      toast({
+        title: "Error submitting form",
+        description: "Please try again or check your connection.",
+        variant: "destructive",
+      });
     }
   };
 

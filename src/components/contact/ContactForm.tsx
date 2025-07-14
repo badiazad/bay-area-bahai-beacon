@@ -29,28 +29,82 @@ const ContactForm = () => {
     "Study Circle",
   ];
 
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!formData.name.trim()) errors.push("Name is required");
+    if (!formData.email.trim()) errors.push("Email is required");
+    if (!formData.message.trim()) errors.push("Message is required");
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      errors.push("Please enter a valid email address");
+    }
+    
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Save to database
-      const { error } = await supabase
-        .from("contact_inquiries")
-        .insert([formData]);
+      // Validate form data
+      const validationErrors = validateForm();
+      if (validationErrors.length > 0) {
+        toast({
+          title: "Please check your information",
+          description: validationErrors.join(", "),
+          variant: "destructive",
+        });
+        return;
+      }
 
-      if (error) {
-        throw error;
+      // Prepare clean data for database
+      const cleanFormData = {
+        name: formData.name.trim(),
+        email: formData.email.toLowerCase().trim(),
+        phone: formData.phone.trim() || null,
+        address: formData.address.trim() || null,
+        interest: formData.interest || null,
+        message: formData.message.trim(),
+      };
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from("contact_inquiries")
+        .insert([cleanFormData]);
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        throw new Error(`Database error: ${dbError.message}`);
       }
 
       // Send emails via edge function
-      const { error: emailError } = await supabase.functions.invoke('send-contact-emails', {
-        body: formData
-      });
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-contact-emails', {
+          body: cleanFormData
+        });
 
-      if (emailError) {
-        console.error("Email error:", emailError);
-        // Don't throw here - form submission succeeded even if email fails
+        if (emailError) {
+          console.error("Email error:", emailError);
+          // Email failure doesn't fail the whole process
+          toast({
+            title: "Message saved successfully!",
+            description: "Your message was saved but confirmation email may be delayed. We'll get back to you soon.",
+          });
+        } else {
+          toast({
+            title: "Message sent successfully!",
+            description: "Thank you for reaching out. Check your email for confirmation and we'll get back to you soon.",
+          });
+        }
+      } catch (emailError) {
+        console.error("Email function error:", emailError);
+        toast({
+          title: "Message saved successfully!",
+          description: "Your message was saved but confirmation email may be delayed. We'll get back to you soon.",
+        });
       }
 
       // Reset form
@@ -63,16 +117,22 @@ const ContactForm = () => {
         message: "",
       });
 
-      toast({
-        title: "Message sent successfully!",
-        description: "Thank you for reaching out. Check your email for confirmation and we'll get back to you soon.",
-      });
-
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting contact form:", error);
+      
+      let errorMessage = "An unexpected error occurred. Please try again later.";
+      
+      if (error.message?.includes("duplicate key value")) {
+        errorMessage = "It looks like you've already submitted this message recently. Please wait a moment before submitting again.";
+      } else if (error.message?.includes("violates row-level security")) {
+        errorMessage = "There was a permission error. Please refresh the page and try again.";
+      } else if (error.message?.includes("Network")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
+      
       toast({
         title: "Error sending message",
-        description: "Please try again or contact us directly.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

@@ -33,6 +33,70 @@ describe('ContactForm Integration Tests', () => {
     mockInvoke.mockResolvedValue({ error: null });
   });
 
+  it('should handle database errors that cause "unexpected error occurred" message', async () => {
+    mockInsert.mockResolvedValue({ 
+      error: { message: 'Connection timeout after 30 seconds' } 
+    });
+
+    const { container } = render(<ContactForm />);
+    
+    // Simulate the form submission that would trigger the error
+    const form = container.querySelector('form');
+    if (form) {
+      const nameInput = form.querySelector('#name') as HTMLInputElement;
+      const emailInput = form.querySelector('#email') as HTMLInputElement;
+      const messageInput = form.querySelector('#message') as HTMLTextAreaElement;
+      
+      if (nameInput && emailInput && messageInput) {
+        nameInput.value = 'Test User';
+        emailInput.value = 'test@example.com';
+        messageInput.value = 'Test message';
+
+        // Trigger form submission
+        form.dispatchEvent(new Event('submit', { bubbles: true }));
+        
+        // Wait for the error handling
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Error sending message',
+          description: 'An unexpected error occurred. Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    }
+  });
+
+  it('should handle email service failures gracefully', async () => {
+    mockInvoke.mockResolvedValue({ 
+      error: { message: 'RESEND_API_KEY not found' } 
+    });
+
+    const { container } = render(<ContactForm />);
+    
+    const form = container.querySelector('form');
+    if (form) {
+      const nameInput = form.querySelector('#name') as HTMLInputElement;
+      const emailInput = form.querySelector('#email') as HTMLInputElement;
+      const messageInput = form.querySelector('#message') as HTMLTextAreaElement;
+      
+      if (nameInput && emailInput && messageInput) {
+        nameInput.value = 'Test User';
+        emailInput.value = 'test@example.com';
+        messageInput.value = 'Test message';
+
+        form.dispatchEvent(new Event('submit', { bubbles: true }));
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Message saved successfully!',
+          description: 'Your message was saved but confirmation email may be delayed. We\'ll get back to you soon.',
+        });
+      }
+    }
+  });
+
   it('verifies form fields match database schema', () => {
     const { getByLabelText } = render(<ContactForm />);
     

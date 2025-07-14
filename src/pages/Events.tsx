@@ -40,9 +40,11 @@ const Events = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showRSVPModal, setShowRSVPModal] = useState(false);
 
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, error } = useQuery({
     queryKey: ["events", searchTerm, calendarFilter],
     queryFn: async () => {
+      console.log("Fetching events with filters:", { searchTerm, calendarFilter });
+      
       let query = supabase
         .from("events")
         .select(`
@@ -63,15 +65,23 @@ const Events = () => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Error fetching events:", error);
+        throw error;
+      }
+
+      console.log("Events fetched successfully:", data?.length || 0, "events");
 
       return data?.map(event => ({
         ...event,
         _count: {
           rsvps: event.event_rsvps?.[0]?.count || 0
         }
-      }));
+      })) || [];
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handleRSVP = (event: Event) => {
@@ -149,7 +159,31 @@ const Events = () => {
       <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading events...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading events...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error("Events page error:", error);
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Community Events</h1>
+            <p className="text-muted-foreground">Unable to load events. Please try again later.</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );

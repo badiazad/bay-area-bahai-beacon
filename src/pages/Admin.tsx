@@ -252,14 +252,17 @@ const Admin = () => {
       console.log("Starting image upload for file:", file.name, "Size:", file.size);
       
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `event-images/${fileName}`;
 
       console.log("Uploading to path:", filePath);
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('media')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -287,21 +290,25 @@ const Admin = () => {
       
       if (selectedImage) {
         console.log("Uploading image:", selectedImage.name, "Size:", selectedImage.size);
-        setUploadingImage(true);
         try {
           imageUrl = await uploadImage(selectedImage);
           console.log("Image uploaded successfully:", imageUrl);
         } catch (error) {
           console.error("Image upload failed:", error);
-          setUploadingImage(false);
           throw new Error("Failed to upload image: " + (error as Error).message);
-        } finally {
-          setUploadingImage(false);
         }
       }
 
       const eventData = {
-        ...data,
+        title: data.title,
+        description: data.description || null,
+        location: data.location,
+        start_date: data.start_date,
+        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
+        calendar_type: data.calendar_type,
+        status: data.status,
+        host_name: data.host_name,
+        host_email: data.host_email,
         featured_image_url: imageUrl || null,
         created_by: user?.id,
         is_recurring: data.is_recurring,
@@ -309,26 +316,18 @@ const Admin = () => {
         recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
         recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
         slug: data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        // Fix timestamp fields - convert empty strings to null
-        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
-        start_date: data.start_date && data.start_date.trim() !== '' ? data.start_date : new Date().toISOString().slice(0, 16),
       };
 
       console.log("Final event data:", eventData);
       console.log("About to insert into database...");
 
-      try {
-        const { data: insertedData, error } = await supabase.from("events").insert(eventData).select();
-        if (error) {
-          console.error("Database insert error:", error);
-          throw new Error(`Database error: ${error.message}`);
-        }
-        console.log("Event created successfully in database:", insertedData);
-        return insertedData;
-      } catch (dbError) {
-        console.error("Database operation failed:", dbError);
-        throw dbError;
+      const { data: insertedData, error } = await supabase.from("events").insert(eventData).select();
+      if (error) {
+        console.error("Database insert error:", error);
+        throw new Error(`Database error: ${error.message}`);
       }
+      console.log("Event created successfully in database:", insertedData);
+      return insertedData;
     },
     onSuccess: () => {
       console.log("Event created successfully");
@@ -336,12 +335,10 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setShowCreateModal(false);
       setSelectedImage(null);
-      setUploadingImage(false);
       resetForm();
     },
     onError: (error: Error) => {
       console.error("Event creation error:", error);
-      setUploadingImage(false);
       toast({
         title: "Error creating event",
         description: error.message,
@@ -357,29 +354,30 @@ const Admin = () => {
       
       if (selectedImage) {
         console.log("Uploading new image:", selectedImage.name, "Size:", selectedImage.size);
-        setUploadingImage(true);
         try {
           imageUrl = await uploadImage(selectedImage);
           console.log("Image uploaded successfully:", imageUrl);
         } catch (error) {
           console.error("Image upload failed:", error);
-          setUploadingImage(false);
           throw new Error("Failed to upload image: " + (error as Error).message);
-        } finally {
-          setUploadingImage(false);
         }
       }
 
       const eventData = {
-        ...data,
+        title: data.title,
+        description: data.description || null,
+        location: data.location,
+        start_date: data.start_date,
+        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
+        calendar_type: data.calendar_type,
+        status: data.status,
+        host_name: data.host_name,
+        host_email: data.host_email,
         featured_image_url: imageUrl || null,
         is_recurring: data.is_recurring,
         recurrence_type: data.is_recurring ? data.recurrence_type : 'none',
         recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
         recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
-        // Fix timestamp fields - convert empty strings to null
-        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
-        start_date: data.start_date && data.start_date.trim() !== '' ? data.start_date : new Date().toISOString().slice(0, 16),
       };
 
       console.log("Final update data:", eventData);
@@ -398,12 +396,10 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setEditingEvent(null);
       setSelectedImage(null);
-      setUploadingImage(false);
       resetForm();
     },
     onError: (error: Error) => {
       console.error("Event update error:", error);
-      setUploadingImage(false);
       toast({
         title: "Error updating event",
         description: error.message,
@@ -497,7 +493,7 @@ const Admin = () => {
     }
   };
 
-  const isSubmitting = createEventMutation.isPending || updateEventMutation.isPending || uploadingImage;
+  const isSubmitting = createEventMutation.isPending || updateEventMutation.isPending;
 
   if (!user) {
     return (
@@ -810,9 +806,7 @@ const Admin = () => {
 
                     <div className="flex gap-2 pt-4">
                       <Button type="submit" disabled={isSubmitting}>
-                        {uploadingImage ? "Uploading Image..." : 
-                         isSubmitting ? "Saving..." : 
-                         editingEvent ? "Update Event" : "Create Event"}
+                        {isSubmitting ? "Saving..." : editingEvent ? "Update Event" : "Create Event"}
                       </Button>
                       <Button type="button" variant="outline" onClick={() => {
                         setShowCreateModal(false);

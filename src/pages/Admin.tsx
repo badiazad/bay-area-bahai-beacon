@@ -106,15 +106,52 @@ const Admin = () => {
     getSession();
   }, []);
 
-  // Initialize Google Places Autocomplete with better error handling
+  // Load Google Maps API and initialize autocomplete
+  useEffect(() => {
+    const loadGoogleMaps = async () => {
+      try {
+        // Load Google Maps script via our edge function
+        const script = document.createElement('script');
+        script.src = 'https://hrbouetcqtxlmlpqboqr.supabase.co/functions/v1/google-maps-config';
+        script.async = true;
+        document.head.appendChild(script);
+        
+        // Wait for Google Maps to load
+        const checkGoogleMaps = () => {
+          return new Promise<void>((resolve) => {
+            const interval = setInterval(() => {
+              if ((window as any).google?.maps?.places) {
+                clearInterval(interval);
+                resolve();
+              }
+            }, 100);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+              clearInterval(interval);
+              resolve();
+            }, 10000);
+          });
+        };
+        
+        await checkGoogleMaps();
+      } catch (error) {
+        console.error("Error loading Google Maps:", error);
+      }
+    };
+
+    loadGoogleMaps();
+  }, []);
+
+  // Initialize Google Places Autocomplete
   useEffect(() => {
     const initAutocomplete = async () => {
       if (!locationInputRef.current) return;
 
       try {
-        // Check if Google Maps is already loaded
+        // Check if Google Maps is loaded
         if (!(window as any).google?.maps?.places) {
-          console.log("Google Maps API not available - location autocomplete disabled");
+          console.log("Google Maps API not available - using regular text input");
           return;
         }
 
@@ -142,10 +179,9 @@ const Admin = () => {
       }
     };
 
-    // Only initialize when modal is open
+    // Only initialize when modal is open and after a small delay
     if (showCreateModal || editingEvent) {
-      // Add a small delay to ensure DOM is ready
-      setTimeout(initAutocomplete, 100);
+      setTimeout(initAutocomplete, 500);
     }
   }, [showCreateModal, editingEvent]);
 
@@ -498,11 +534,11 @@ const Admin = () => {
                         id="location"
                         value={formData.location}
                         onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        placeholder="Enter location (Google autocomplete not available)"
+                        placeholder="Enter location"
                         required
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Note: Location autocomplete requires Google Maps API configuration
+                        Type to search for locations with Google autocomplete
                       </p>
                     </div>
 

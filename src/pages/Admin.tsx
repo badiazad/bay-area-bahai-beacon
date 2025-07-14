@@ -110,31 +110,58 @@ const Admin = () => {
   useEffect(() => {
     const loadGoogleMaps = async () => {
       try {
+        console.log("Starting to load Google Maps API...");
+        
+        // Check if already loaded
+        if ((window as any).google?.maps?.places) {
+          console.log("Google Maps API already loaded");
+          return;
+        }
+        
+        // Set up a promise that resolves when Google Maps is loaded
+        const googleMapsPromise = new Promise<void>((resolve) => {
+          // Override the callback function
+          (window as any).initGoogleMaps = () => {
+            console.log("Google Maps callback fired - API is ready!");
+            resolve();
+          };
+          
+          // Also check periodically in case callback doesn't fire
+          const checkInterval = setInterval(() => {
+            if ((window as any).google?.maps?.places) {
+              console.log("Google Maps detected via polling");
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+          
+          // Timeout after 15 seconds
+          setTimeout(() => {
+            console.error("Timeout waiting for Google Maps to load");
+            clearInterval(checkInterval);
+            resolve();
+          }, 15000);
+        });
+        
         // Load Google Maps script via our edge function
         const script = document.createElement('script');
         script.src = 'https://hrbouetcqtxlmlpqboqr.supabase.co/functions/v1/google-maps-config';
         script.async = true;
-        document.head.appendChild(script);
         
-        // Wait for Google Maps to load
-        const checkGoogleMaps = () => {
-          return new Promise<void>((resolve) => {
-            const interval = setInterval(() => {
-              if ((window as any).google?.maps?.places) {
-                clearInterval(interval);
-                resolve();
-              }
-            }, 100);
-            
-            // Timeout after 10 seconds
-            setTimeout(() => {
-              clearInterval(interval);
-              resolve();
-            }, 10000);
-          });
+        script.onload = () => {
+          console.log("Google Maps config script loaded and executed");
         };
         
-        await checkGoogleMaps();
+        script.onerror = (error) => {
+          console.error("Error loading Google Maps config script:", error);
+        };
+        
+        document.head.appendChild(script);
+        
+        // Wait for Google Maps to be ready
+        await googleMapsPromise;
+        console.log("Google Maps loading process completed");
+        
       } catch (error) {
         console.error("Error loading Google Maps:", error);
       }
@@ -146,14 +173,21 @@ const Admin = () => {
   // Initialize Google Places Autocomplete
   useEffect(() => {
     const initAutocomplete = async () => {
-      if (!locationInputRef.current) return;
+      if (!locationInputRef.current) {
+        console.log("Location input ref not available");
+        return;
+      }
 
       try {
+        console.log("Attempting to initialize autocomplete...");
+        
         // Check if Google Maps is loaded
         if (!(window as any).google?.maps?.places) {
           console.log("Google Maps API not available - using regular text input");
           return;
         }
+
+        console.log("Google Maps API detected, initializing autocomplete...");
 
         autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
           locationInputRef.current,
@@ -164,8 +198,10 @@ const Admin = () => {
         );
 
         autocompleteRef.current.addListener("place_changed", () => {
+          console.log("Place changed event fired");
           const place = autocompleteRef.current?.getPlace();
           if (place) {
+            console.log("Selected place:", place);
             setFormData(prev => ({
               ...prev,
               location: place.name || place.formatted_address || ""
@@ -181,7 +217,8 @@ const Admin = () => {
 
     // Only initialize when modal is open and after a small delay
     if (showCreateModal || editingEvent) {
-      setTimeout(initAutocomplete, 500);
+      console.log("Modal is open, will initialize autocomplete...");
+      setTimeout(initAutocomplete, 1000); // Increased delay
     }
   }, [showCreateModal, editingEvent]);
 

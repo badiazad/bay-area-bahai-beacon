@@ -209,36 +209,23 @@ const ContactForm = () => {
               <Card className="shadow-soft">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4 text-foreground">
-                    Our Community Activities
+                    Visit or Contact Us
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-accent">Devotional Gatherings</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Join us for weekly devotional gatherings featuring prayers, 
-                        music, and spiritual reflection in a warm, welcoming atmosphere.
-                      </p>
+                      <h4 className="font-medium text-accent">San Francisco Baha'i Center</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>355 Bryant St, Unit 110</p>
+                        <p>San Francisco, CA 94107</p>
+                        <p>United States</p>
+                      </div>
                     </div>
                     <div>
-                      <h4 className="font-medium text-accent">Children's Classes</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Spiritual education for children focusing on virtues, 
-                        character development, and service to humanity.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-accent">Youth Programs</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Empowering young people to explore their purpose and 
-                        contribute to the betterment of society.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-accent">Study Circles</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Small group study sessions exploring themes of spiritual 
-                        and social development.
-                      </p>
+                      <h4 className="font-medium text-accent">Contact Information</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p><strong>Phone:</strong> (415) 431-9990</p>
+                        <p><strong>Email:</strong> office@sfbahai.org</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -247,15 +234,15 @@ const ContactForm = () => {
               <Card className="shadow-soft">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4 text-foreground">
-                    Get Involved
+                    Connect With Us
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    Whether you're new to the Bay Area or have been here for years, 
-                    our community welcomes people from all backgrounds who share a 
-                    commitment to unity, justice, and service.
+                    If you're interested in learning more about the Baha'i Faith or would like to attend an event, we'd be delighted to hear from you.
+                  </p>
+                  <p className="text-muted-foreground mb-4">
+                    You can use the contact form, call us, or simply stop by our center during office hours.
                   </p>
                   <div className="space-y-2 text-sm">
-                    <p><strong>Location:</strong> San Francisco Bay Area</p>
                     <p><strong>Response time:</strong> Within 24 hours</p>
                     <p><strong>Languages:</strong> English, Spanish, Persian, and more</p>
                   </div>

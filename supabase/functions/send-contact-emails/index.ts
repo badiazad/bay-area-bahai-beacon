@@ -115,26 +115,38 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    // Log to Google Sheets
-    const sheetsResponse = await fetch(Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") || "", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        name: submission.name,
-        email: submission.email,
-        phone: submission.phone || "",
-        city: submission.city,
-        interest: submission.interest,
-        message: submission.message || "",
-      }),
-    });
+    // Log to Google Sheets (optional)
+    let sheetsLoggedSuccessfully = false;
+    const googleSheetsUrl = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL");
+    
+    if (googleSheetsUrl) {
+      try {
+        const sheetsResponse = await fetch(googleSheetsUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            name: submission.name,
+            email: submission.email,
+            phone: submission.phone || "",
+            city: submission.city,
+            interest: submission.interest,
+            message: submission.message || "",
+          }),
+        });
+        sheetsLoggedSuccessfully = sheetsResponse.ok;
+        console.log("Google Sheets logged:", sheetsResponse.status);
+      } catch (error) {
+        console.error("Failed to log to Google Sheets (non-critical):", error);
+      }
+    } else {
+      console.log("Google Sheets webhook URL not configured - skipping");
+    }
 
     console.log("Auto-reply sent:", autoReplyResponse);
     console.log("Notification sent:", notificationResponse);
-    console.log("Google Sheets logged:", sheetsResponse.status);
 
     return new Response(
       JSON.stringify({ 

@@ -46,63 +46,38 @@ const Events = () => {
     queryFn: async () => {
       console.log("🔍 Starting events query with filters:", { searchTerm, calendarFilter });
       
-      try {
-        // Simplified query - remove the RSVP count join for now to improve performance
-        let query = supabase
-          .from("events")
-          .select("*")
-          .eq("status", "published")
-          .order("start_date", { ascending: true });
+      let query = supabase
+        .from("events")
+        .select("*")
+        .eq("status", "published")
+        .order("start_date", { ascending: true });
 
-        console.log("📊 Base query created");
-
-        if (searchTerm) {
-          query = query.or(
-            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`
-          );
-          console.log("🔍 Search filter applied:", searchTerm);
-        }
-
-        if (calendarFilter !== "all") {
-          query = query.eq("calendar_type", calendarFilter as any);
-          console.log("📅 Calendar filter applied:", calendarFilter);
-        }
-
-        console.log("🚀 Executing query...");
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error("❌ Query error:", error);
-          throw error;
-        }
-
-        console.log("✅ Query successful! Raw data:", data);
-        console.log("📈 Events found:", data?.length || 0);
-
-        // For now, set RSVP count to 0 to improve performance
-        // We can fetch RSVP counts separately if needed
-        const processedEvents = data?.map(event => ({
-          ...event,
-          _count: {
-            rsvps: 0 // Placeholder - can be fetched separately for better performance
-          }
-        })) || [];
-
-        console.log("🎯 Processed events:", processedEvents);
-        return processedEvents;
-        
-      } catch (queryError) {
-        console.error("💥 Query function error:", queryError);
-        throw queryError;
+      if (searchTerm) {
+        query = query.or(
+          `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`
+        );
       }
+
+      if (calendarFilter !== "all") {
+        query = query.eq("calendar_type", calendarFilter as any);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("❌ Query error:", error);
+        throw error;
+      }
+
+      console.log("✅ Events loaded:", data?.length || 0);
+      
+      return data?.map(event => ({
+        ...event,
+        _count: { rsvps: 0 }
+      })) || [];
     },
-    retry: 2, // Reduced retry attempts
-    retryDelay: 1000, // Fixed 1 second retry delay
-    staleTime: 2 * 60 * 1000, // Reduced to 2 minutes
-    gcTime: 5 * 60 * 1000, // Reduced to 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true, // Allow refetch on mount
-    refetchOnReconnect: true, // Allow refetch on reconnect
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleRSVP = (event: Event) => {

@@ -248,24 +248,36 @@ const Admin = () => {
   });
 
   const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `event-images/${fileName}`;
+    try {
+      console.log("Starting image upload for file:", file.name, "Size:", file.size);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `event-images/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('media')
-      .upload(filePath, file);
+      console.log("Uploading to path:", filePath);
 
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      throw uploadError;
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log("Upload successful, getting public URL...");
+
+      const { data } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      console.log("Public URL generated:", data.publicUrl);
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Image upload error:", error);
+      throw error;
     }
-
-    const { data } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   };
 
   const createEventMutation = useMutation({
@@ -274,13 +286,14 @@ const Admin = () => {
       let imageUrl = data.featured_image_url;
       
       if (selectedImage) {
-        console.log("Uploading image:", selectedImage.name);
+        console.log("Uploading image:", selectedImage.name, "Size:", selectedImage.size);
         setUploadingImage(true);
         try {
           imageUrl = await uploadImage(selectedImage);
           console.log("Image uploaded successfully:", imageUrl);
         } catch (error) {
           console.error("Image upload failed:", error);
+          setUploadingImage(false);
           throw new Error("Failed to upload image: " + (error as Error).message);
         } finally {
           setUploadingImage(false);
@@ -303,8 +316,10 @@ const Admin = () => {
       const { error } = await supabase.from("events").insert(eventData);
       if (error) {
         console.error("Database insert error:", error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
       }
+      
+      console.log("Event created successfully in database");
     },
     onSuccess: () => {
       console.log("Event created successfully");
@@ -312,10 +327,12 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setShowCreateModal(false);
       setSelectedImage(null);
+      setUploadingImage(false);
       resetForm();
     },
     onError: (error: Error) => {
       console.error("Event creation error:", error);
+      setUploadingImage(false);
       toast({
         title: "Error creating event",
         description: error.message,
@@ -330,13 +347,14 @@ const Admin = () => {
       let imageUrl = data.featured_image_url;
       
       if (selectedImage) {
-        console.log("Uploading new image:", selectedImage.name);
+        console.log("Uploading new image:", selectedImage.name, "Size:", selectedImage.size);
         setUploadingImage(true);
         try {
           imageUrl = await uploadImage(selectedImage);
           console.log("Image uploaded successfully:", imageUrl);
         } catch (error) {
           console.error("Image upload failed:", error);
+          setUploadingImage(false);
           throw new Error("Failed to upload image: " + (error as Error).message);
         } finally {
           setUploadingImage(false);
@@ -357,8 +375,10 @@ const Admin = () => {
       const { error } = await supabase.from("events").update(eventData).eq("id", id);
       if (error) {
         console.error("Database update error:", error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
       }
+      
+      console.log("Event updated successfully in database");
     },
     onSuccess: () => {
       console.log("Event updated successfully");
@@ -366,10 +386,12 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-events"] });
       setEditingEvent(null);
       setSelectedImage(null);
+      setUploadingImage(false);
       resetForm();
     },
     onError: (error: Error) => {
       console.error("Event update error:", error);
+      setUploadingImage(false);
       toast({
         title: "Error updating event",
         description: error.message,

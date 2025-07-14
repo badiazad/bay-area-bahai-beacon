@@ -16,33 +16,33 @@ export type Database = {
     Tables: {
       contact_inquiries: {
         Row: {
-          city: string
+          address: string | null
           created_at: string | null
           email: string
           id: string
-          interest: string
+          interest: string | null
           message: string | null
           name: string
           phone: string | null
           processed: boolean | null
         }
         Insert: {
-          city: string
+          address?: string | null
           created_at?: string | null
           email: string
           id?: string
-          interest: string
+          interest?: string | null
           message?: string | null
           name: string
           phone?: string | null
           processed?: boolean | null
         }
         Update: {
-          city?: string
+          address?: string | null
           created_at?: string | null
           email?: string
           id?: string
-          interest?: string
+          interest?: string | null
           message?: string | null
           name?: string
           phone?: string | null

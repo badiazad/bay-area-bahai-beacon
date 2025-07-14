@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import Navigation from "@/components/layout/Navigation";
 import { EventRSVPModal } from "@/components/events/EventRSVPModal";
 import { EventCalendarView } from "@/components/events/EventCalendarView";
+import { EventDetailsDialog } from "@/components/events/EventDetailsDialog";
 
 type Event = {
   id: string;
@@ -38,6 +39,7 @@ const Events = () => {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showRSVPModal, setShowRSVPModal] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const { data: events, isLoading, error } = useQuery({
     queryKey: ["events", searchTerm, calendarFilter],
@@ -106,6 +108,11 @@ const Events = () => {
   const handleRSVP = (event: Event) => {
     setSelectedEvent(event);
     setShowRSVPModal(true);
+  };
+
+  const handleEventSelect = (event: Event) => {
+    setSelectedEvent(event);
+    setShowDetailsDialog(true);
   };
 
   const handleEmailHost = (event: Event) => {
@@ -287,7 +294,7 @@ const Events = () => {
 
         {/* Content */}
         {viewMode === "calendar" ? (
-          <EventCalendarView events={events || []} onEventSelect={handleRSVP} />
+          <EventCalendarView events={events || []} onEventSelect={handleEventSelect} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {events?.map((event) => (
@@ -388,6 +395,22 @@ const Events = () => {
         )}
 
       </div>
+
+      {/* Event Details Dialog */}
+      {selectedEvent && (
+        <EventDetailsDialog
+          event={selectedEvent}
+          isOpen={showDetailsDialog}
+          onClose={() => {
+            setShowDetailsDialog(false);
+            setSelectedEvent(null);
+          }}
+          onRSVP={handleRSVP}
+          onEmailHost={handleEmailHost}
+          generateCalendarUrl={generateCalendarUrl}
+          generateMapUrl={generateMapUrl}
+        />
+      )}
 
       {/* RSVP Modal */}
       {selectedEvent && (

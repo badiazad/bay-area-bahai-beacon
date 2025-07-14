@@ -43,14 +43,42 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
 
   const rsvpMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase
+      // First check if an RSVP already exists for this email and event
+      const { data: existingRSVP, error: checkError } = await supabase
         .from("event_rsvps")
-        .insert({
-          event_id: event.id,
-          ...data,
-        });
+        .select("id")
+        .eq("event_id", event.id)
+        .eq("email", data.email)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (checkError) throw checkError;
+
+      if (existingRSVP) {
+        // Update existing RSVP
+        const { error } = await supabase
+          .from("event_rsvps")
+          .update({
+            name: data.name,
+            phone: data.phone,
+            guest_count: data.guest_count,
+            notes: data.notes,
+            reminder_email: data.reminder_email,
+            reminder_sms: data.reminder_sms,
+          })
+          .eq("id", existingRSVP.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new RSVP
+        const { error } = await supabase
+          .from("event_rsvps")
+          .insert({
+            event_id: event.id,
+            ...data,
+          });
+
+        if (error) throw error;
+      }
 
       // Send confirmation email and calendar invite
       try {
@@ -78,7 +106,6 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
         email: "",
         phone: "",
         guest_count: 1,
-        
         notes: "",
         reminder_email: true,
         reminder_sms: false,

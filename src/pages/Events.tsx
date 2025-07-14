@@ -58,7 +58,7 @@ const Events = () => {
 
         if (searchTerm) {
           query = query.or(
-            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,tags.cs.{${searchTerm}}`
+            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`
           );
           console.log("🔍 Search filter applied:", searchTerm);
         }

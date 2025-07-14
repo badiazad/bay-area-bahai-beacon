@@ -36,7 +36,6 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
     email: "",
     phone: "",
     guest_count: 1,
-    dietary_restrictions: "",
     notes: "",
     reminder_email: true,
     reminder_sms: false,
@@ -77,7 +76,7 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
         email: "",
         phone: "",
         guest_count: 1,
-        dietary_restrictions: "",
+        
         notes: "",
         reminder_email: true,
         reminder_sms: false,
@@ -189,15 +188,6 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
             />
           </div>
 
-          <div>
-            <Label htmlFor="dietary_restrictions">Dietary Restrictions</Label>
-            <Input
-              id="dietary_restrictions"
-              value={formData.dietary_restrictions}
-              onChange={(e) => setFormData(prev => ({ ...prev, dietary_restrictions: e.target.value }))}
-              placeholder="e.g., vegetarian, gluten-free"
-            />
-          </div>
 
           <div>
             <Label htmlFor="notes">Additional Notes</Label>

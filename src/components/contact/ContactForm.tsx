@@ -15,7 +15,7 @@ const ContactForm = () => {
     name: "",
     email: "",
     phone: "",
-    city: "",
+    address: "",
     interest: "",
     message: "",
   });
@@ -58,7 +58,7 @@ const ContactForm = () => {
         name: "",
         email: "",
         phone: "",
-        city: "",
+        address: "",
         interest: "",
         message: "",
       });
@@ -150,24 +150,22 @@ const ContactForm = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
+                      <Label htmlFor="address">Address</Label>
                       <Input
-                        id="city"
+                        id="address"
                         type="text"
                         placeholder="San Francisco, CA"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        required
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="interest">Interest *</Label>
+                    <Label htmlFor="interest">Interest</Label>
                     <Select
                       value={formData.interest}
                       onValueChange={(value) => setFormData({ ...formData, interest: value })}
-                      required
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="What are you interested in?" />
@@ -183,13 +181,14 @@ const ContactForm = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
+                    <Label htmlFor="message">Message *</Label>
                     <Textarea
                       id="message"
                       placeholder="Tell us more about how we can help you connect with our community..."
                       rows={4}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      required
                     />
                   </div>
 

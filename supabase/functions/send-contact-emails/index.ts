@@ -18,15 +18,50 @@ interface ContactSubmission {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("📧 Contact email function called");
+  
   if (req.method === "OPTIONS") {
+    console.log("🔄 Handling CORS preflight");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("📝 Parsing request body");
     const submission: ContactSubmission = await req.json();
     
-    console.log("Processing contact submission:", submission);
+    console.log("📊 Processing contact submission:", { 
+      name: submission.name, 
+      email: submission.email,
+      hasMessage: !!submission.message 
+    });
 
+    // Validate required fields
+    if (!submission.name || !submission.email || !submission.message) {
+      console.error("❌ Missing required fields");
+      return new Response(
+        JSON.stringify({ error: "Name, email, and message are required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(submission.email)) {
+      console.error("❌ Invalid email format");
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("📧 Sending emails in parallel...");
+    
     // Send both emails in parallel for better performance
     const [autoReplyResponse, notificationResponse] = await Promise.all([
       resend.emails.send({
@@ -81,7 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
       }),
       resend.emails.send({
         from: "SF Baha'i Community <noreply@sfbahai.org>",
-        to: ["info@sfbahai.org"],
+        to: ["badiazad@yahoo.com"],
         subject: `New Community Inquiry${submission.interest ? `: ${submission.interest}` : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -113,10 +148,9 @@ const handler = async (req: Request): Promise<Response> => {
       })
     ]);
 
-    console.log("Contact form submission processed successfully");
-
-    console.log("Auto-reply sent:", autoReplyResponse);
-    console.log("Notification sent:", notificationResponse);
+    console.log("✅ Emails sent successfully");
+    console.log("📧 Auto-reply sent:", autoReplyResponse.id);
+    console.log("📧 Notification sent:", notificationResponse.id);
 
     return new Response(
       JSON.stringify({ 

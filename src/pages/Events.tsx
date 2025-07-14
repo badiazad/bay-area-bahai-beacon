@@ -97,6 +97,10 @@ const Events = () => {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const handleRSVP = (event: Event) => {
@@ -171,23 +175,15 @@ const Events = () => {
     hasError: !!error, 
     eventsCount: events?.length || 0,
     searchTerm,
-    calendarFilter,
-    eventsData: events
+    calendarFilter
   });
 
   if (error) {
     console.error("💥 Events page error details:", error);
   }
 
-  // Force re-render fix for loading state issue
-  useEffect(() => {
-    if (!isLoading && events !== undefined) {
-      console.log("✅ Events loaded, forcing UI update");
-    }
-  }, [isLoading, events]);
-
   if (isLoading) {
-    console.log("⏳ Showing loading state - isLoading:", isLoading, "events:", events);
+    console.log("⏳ Showing loading state");
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -203,8 +199,6 @@ const Events = () => {
       </div>
     );
   }
-
-  console.log("✅ Rendering main content - isLoading:", isLoading, "events count:", events?.length);
 
   if (error) {
     console.error("❌ Rendering error state");

@@ -16,12 +16,9 @@ type Event = {
   title: string;
   description: string;
   location: string;
-  address: string;
   start_date: string;
   end_date: string;
   host_name: string;
-  latitude?: number;
-  longitude?: number;
 };
 
 type EventRSVPModalProps = {
@@ -105,7 +102,7 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
     const startDate = new Date(event.start_date);
     const endDate = event.end_date ? new Date(event.end_date) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
     
-    const details = `${event.description || ''}\n\nHost: ${event.host_name}\nLocation: ${event.location}${event.address ? `\nAddress: ${event.address}` : ''}`;
+    const details = `${event.description || ''}\n\nHost: ${event.host_name}\nLocation: ${event.location}`;
     
     if (type === "google") {
       const start = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -123,9 +120,6 @@ export const EventRSVPModal = ({ event, isOpen, onClose }: EventRSVPModalProps) 
   };
 
   const generateMapUrl = () => {
-    if (event.latitude && event.longitude) {
-      return `https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`;
-    }
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
   };
 

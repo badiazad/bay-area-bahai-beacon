@@ -11,7 +11,6 @@ import { format } from "date-fns";
 import Navigation from "@/components/layout/Navigation";
 import { EventRSVPModal } from "@/components/events/EventRSVPModal";
 import { EventCalendarView } from "@/components/events/EventCalendarView";
-import EventLocationSection from "@/components/events/EventLocationSection";
 
 type Event = {
   id: string;
@@ -244,6 +243,9 @@ const Events = () => {
                     )}
                   </div>
                   <CardTitle className="text-xl">{event.title}</CardTitle>
+                  {event.description && (
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{event.description}</p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2 text-sm text-muted-foreground">
@@ -258,7 +260,7 @@ const Events = () => {
                         <span className="text-muted-foreground">
                           {" - "}
                           <button 
-                            onClick={() => window.open(generateMapUrl(event), "_blank")}
+                            onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`, "_blank")}
                             className="underline hover:text-foreground transition-colors"
                           >
                             {event.address}
@@ -272,15 +274,6 @@ const Events = () => {
                     </div>
                   </div>
 
-                  {/* Location Section */}
-                  <EventLocationSection 
-                    location={event.location} 
-                    address={event.address}
-                  />
-
-                  {event.description && (
-                    <p className="text-sm line-clamp-3">{event.description}</p>
-                  )}
                   {event.tags && event.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {event.tags.map((tag, index) => (

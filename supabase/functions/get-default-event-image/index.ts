@@ -31,8 +31,8 @@ serve(async (req) => {
       );
     }
 
-    // Create search query from title and description only
-    const searchQuery = `${title} ${description || ''}`.trim();
+    // Create search query from title only
+    const searchQuery = title.trim();
     
     console.log('Searching for images with query:', searchQuery);
 

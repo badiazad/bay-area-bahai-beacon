@@ -555,10 +555,16 @@ const Admin = () => {
                   setEditingEvent(null);
                   setSelectedImage(null);
                   resetForm();
+                } else if (!editingEvent) {
+                  setShowCreateModal(true);
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetForm}>
+                  <Button onClick={() => {
+                    resetForm();
+                    setEditingEvent(null);
+                    setShowCreateModal(true);
+                  }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Event
                   </Button>

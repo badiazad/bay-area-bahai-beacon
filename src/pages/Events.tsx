@@ -171,15 +171,23 @@ const Events = () => {
     hasError: !!error, 
     eventsCount: events?.length || 0,
     searchTerm,
-    calendarFilter 
+    calendarFilter,
+    eventsData: events
   });
 
   if (error) {
     console.error("💥 Events page error details:", error);
   }
 
+  // Force re-render fix for loading state issue
+  useEffect(() => {
+    if (!isLoading && events !== undefined) {
+      console.log("✅ Events loaded, forcing UI update");
+    }
+  }, [isLoading, events]);
+
   if (isLoading) {
-    console.log("⏳ Showing loading state");
+    console.log("⏳ Showing loading state - isLoading:", isLoading, "events:", events);
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -195,6 +203,8 @@ const Events = () => {
       </div>
     );
   }
+
+  console.log("✅ Rendering main content - isLoading:", isLoading, "events count:", events?.length);
 
   if (error) {
     console.error("❌ Rendering error state");

@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Clock, Users, Search, Filter, LayoutGrid, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Search, Filter, LayoutGrid, Calendar as CalendarIcon, Mail } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/layout/Navigation";
 import { EventRSVPModal } from "@/components/events/EventRSVPModal";
 import { EventCalendarView } from "@/components/events/EventCalendarView";
+import EventMiniMap from "@/components/events/EventMiniMap";
 
 type Event = {
   id: string;
@@ -23,6 +24,7 @@ type Event = {
   calendar_type: string;
   featured_image_url: string;
   host_name: string;
+  host_email: string;
   max_attendees: number;
   tags: string[];
   _count?: {
@@ -74,6 +76,15 @@ const Events = () => {
   const handleRSVP = (event: Event) => {
     setSelectedEvent(event);
     setShowRSVPModal(true);
+  };
+
+  const handleEmailHost = (event: Event) => {
+    const subject = encodeURIComponent(`Question about "${event.title}"`);
+    const body = encodeURIComponent(
+      `Hi ${event.host_name},\n\nI have a question about the "${event.title}" event scheduled for ${formatDate(event.start_date)} at ${event.location}.\n\n${event.description ? `Event Description: ${event.description}\n\n` : ''}Please let me know:\n\nThank you!\n\nBest regards`
+    );
+    
+    window.location.href = `mailto:${event.host_email}?subject=${subject}&body=${body}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -178,7 +189,7 @@ const Events = () => {
         {viewMode === "calendar" ? (
           <EventCalendarView events={events || []} onEventSelect={handleRSVP} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {events?.map((event) => (
               <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 {event.featured_image_url && (
@@ -204,7 +215,7 @@ const Events = () => {
                   </div>
                   <CardTitle className="text-xl">{event.title}</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 mr-2" />
@@ -219,11 +230,22 @@ const Events = () => {
                       Host: {event.host_name}
                     </div>
                   </div>
+
+                  {/* Mini Map */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Location</h4>
+                    <EventMiniMap 
+                      location={event.location} 
+                      address={event.address}
+                      className="w-full h-24"
+                    />
+                  </div>
+
                   {event.description && (
-                    <p className="mt-3 text-sm line-clamp-3">{event.description}</p>
+                    <p className="text-sm line-clamp-3">{event.description}</p>
                   )}
                   {event.tags && event.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
+                    <div className="flex flex-wrap gap-1">
                       {event.tags.map((tag, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {tag}
@@ -235,6 +257,14 @@ const Events = () => {
                 <CardFooter className="flex gap-2">
                   <Button onClick={() => handleRSVP(event)} className="flex-1">
                     RSVP
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEmailHost(event)}
+                    title={`Email ${event.host_name}`}
+                  >
+                    <Mail className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="sm">
                     <Calendar className="h-4 w-4" />

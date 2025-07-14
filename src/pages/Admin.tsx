@@ -297,6 +297,25 @@ const Admin = () => {
           console.error("Image upload failed:", error);
           throw new Error("Failed to upload image: " + (error as Error).message);
         }
+      } else if (!imageUrl || imageUrl.trim() === '') {
+        // Get default image if no image is uploaded
+        console.log("No image uploaded, getting default image...");
+        try {
+          const response = await supabase.functions.invoke('get-default-event-image', {
+            body: { 
+              title: data.title, 
+              description: data.description 
+            }
+          });
+          
+          if (response.data?.imageUrl) {
+            imageUrl = response.data.imageUrl;
+            console.log("Got default image:", imageUrl);
+          }
+        } catch (error) {
+          console.error("Failed to get default image:", error);
+          // Continue without default image
+        }
       }
 
       const eventData = {

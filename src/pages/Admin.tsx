@@ -37,21 +37,22 @@ type Event = {
   title: string;
   description: string;
   location: string;
-  address: string;
   start_date: string;
   end_date: string;
   calendar_type: string;
   status: string;
   host_name: string;
   host_email: string;
-  max_attendees: number;
-  tags: string[];
   featured_image_url: string;
   is_recurring: boolean;
   recurrence_type: string;
   recurrence_interval: number;
   recurrence_end_date: string;
+  slug: string;
+  created_at: string;
   created_by: string;
+  updated_at: string;
+  parent_event_id: string;
   _count?: {
     rsvps: number;
   };

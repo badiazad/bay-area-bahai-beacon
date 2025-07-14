@@ -17,17 +17,16 @@ type Event = {
   title: string;
   description: string;
   location: string;
-  address: string;
   start_date: string;
   end_date: string;
   calendar_type: string;
   featured_image_url: string;
   host_name: string;
   host_email: string;
-  max_attendees: number;
-  tags: string[];
-  latitude?: number;
-  longitude?: number;
+  status: string;
+  slug: string;
+  created_at: string;
+  created_by: string;
   _count?: {
     rsvps: number;
   };
@@ -327,33 +326,12 @@ const Events = () => {
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-2" />
                       <span>{event.location}</span>
-                      {event.address && (
-                        <span className="text-muted-foreground">
-                          {" - "}
-                          <button 
-                            onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`, "_blank")}
-                            className="underline hover:text-foreground transition-colors"
-                          >
-                            {event.address}
-                          </button>
-                        </span>
-                      )}
                     </div>
                     <div className="flex items-center">
                       <Users className="h-4 w-4 mr-2" />
                       Host: {event.host_name}
                     </div>
                   </div>
-
-                  {event.tags && event.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {event.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3">
                   <Button onClick={() => handleRSVP(event)} className="w-full">

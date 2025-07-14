@@ -185,7 +185,6 @@ export type Database = {
       }
       events: {
         Row: {
-          address: string | null
           calendar_type: Database["public"]["Enums"]["event_calendar"]
           created_at: string
           created_by: string
@@ -196,10 +195,7 @@ export type Database = {
           host_name: string
           id: string
           is_recurring: boolean
-          latitude: number | null
           location: string
-          longitude: number | null
-          max_attendees: number | null
           parent_event_id: string | null
           recurrence_end_date: string | null
           recurrence_interval: number | null
@@ -207,12 +203,10 @@ export type Database = {
           slug: string
           start_date: string
           status: Database["public"]["Enums"]["event_status"]
-          tags: string[] | null
           title: string
           updated_at: string
         }
         Insert: {
-          address?: string | null
           calendar_type?: Database["public"]["Enums"]["event_calendar"]
           created_at?: string
           created_by: string
@@ -223,10 +217,7 @@ export type Database = {
           host_name: string
           id?: string
           is_recurring?: boolean
-          latitude?: number | null
           location: string
-          longitude?: number | null
-          max_attendees?: number | null
           parent_event_id?: string | null
           recurrence_end_date?: string | null
           recurrence_interval?: number | null
@@ -234,12 +225,10 @@ export type Database = {
           slug: string
           start_date: string
           status?: Database["public"]["Enums"]["event_status"]
-          tags?: string[] | null
           title: string
           updated_at?: string
         }
         Update: {
-          address?: string | null
           calendar_type?: Database["public"]["Enums"]["event_calendar"]
           created_at?: string
           created_by?: string
@@ -250,10 +239,7 @@ export type Database = {
           host_name?: string
           id?: string
           is_recurring?: boolean
-          latitude?: number | null
           location?: string
-          longitude?: number | null
-          max_attendees?: number | null
           parent_event_id?: string | null
           recurrence_end_date?: string | null
           recurrence_interval?: number | null
@@ -261,7 +247,6 @@ export type Database = {
           slug?: string
           start_date?: string
           status?: Database["public"]["Enums"]["event_status"]
-          tags?: string[] | null
           title?: string
           updated_at?: string
         }

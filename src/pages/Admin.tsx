@@ -309,6 +309,9 @@ const Admin = () => {
         recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
         recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
         slug: data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        // Fix timestamp fields - convert empty strings to null
+        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
+        start_date: data.start_date && data.start_date.trim() !== '' ? data.start_date : new Date().toISOString().slice(0, 16),
       };
 
       console.log("Final event data:", eventData);
@@ -368,6 +371,9 @@ const Admin = () => {
         recurrence_type: data.is_recurring ? data.recurrence_type : 'none',
         recurrence_interval: data.is_recurring ? parseInt(data.recurrence_interval) : null,
         recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
+        // Fix timestamp fields - convert empty strings to null
+        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
+        start_date: data.start_date && data.start_date.trim() !== '' ? data.start_date : new Date().toISOString().slice(0, 16),
       };
 
       console.log("Final update data:", eventData);

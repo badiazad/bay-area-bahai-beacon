@@ -26,7 +26,7 @@ type EventDetailsDialogProps = {
   onClose: () => void;
   onRSVP: (event: Event) => void;
   onEmailHost: (event: Event) => void;
-  generateCalendarUrl: (event: Event, type: "google" | "outlook") => string;
+  generateCalendarUrl: (event: Event, type: "google" | "apple") => string;
   generateMapUrl: (event: Event) => string;
 };
 
@@ -127,10 +127,16 @@ export const EventDetailsDialog = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(generateCalendarUrl(event, "outlook"), "_blank")}
+                onClick={() => {
+                  const url = generateCalendarUrl(event, "apple");
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+                  link.click();
+                }}
               >
                 <Calendar className="h-4 w-4 mr-2" />
-                Outlook
+                Apple Cal
               </Button>
               <Button
                 variant="outline"

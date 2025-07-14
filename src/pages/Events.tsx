@@ -124,7 +124,7 @@ const Events = () => {
     window.open(`mailto:${event.host_email}?subject=${subject}&body=${body}`, "_blank");
   };
 
-  const generateCalendarUrl = (event: Event, type: "google" | "outlook") => {
+  const generateCalendarUrl = (event: Event, type: "google" | "apple") => {
     const startDate = new Date(event.start_date);
     const endDate = event.end_date ? new Date(event.end_date) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
     
@@ -136,10 +136,24 @@ const Events = () => {
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(event.location)}`;
     }
     
-    if (type === "outlook") {
-      const start = startDate.toISOString();
-      const end = endDate.toISOString();
-      return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(event.title)}&startdt=${start}&enddt=${end}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(event.location)}`;
+    if (type === "apple") {
+      const start = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const end = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Your Organization//Events//EN
+BEGIN:VEVENT
+UID:${event.id}@yourdomain.com
+DTSTART:${start}
+DTEND:${end}
+SUMMARY:${event.title}
+DESCRIPTION:${details.replace(/\n/g, '\\n')}
+LOCATION:${event.location}
+END:VEVENT
+END:VCALENDAR`;
+      
+      const blob = new Blob([icsContent], { type: 'text/calendar' });
+      return URL.createObjectURL(blob);
     }
     
     return "#";
@@ -359,10 +373,16 @@ const Events = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(generateCalendarUrl(event, "outlook"), "_blank")}
+                      onClick={() => {
+                        const url = generateCalendarUrl(event, "apple");
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+                        link.click();
+                      }}
                     >
                       <Calendar className="h-4 w-4 mr-2" />
-                      Outlook
+                      Apple Cal
                     </Button>
                     <Button
                       variant="outline"

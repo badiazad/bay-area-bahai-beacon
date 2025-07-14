@@ -300,32 +300,18 @@ const Admin = () => {
           throw new Error("Failed to upload image: " + (error as Error).message);
         }
       } else if (!imageUrl || imageUrl.trim() === '') {
-        // Get default image if no image is uploaded
-        console.log("No image uploaded, getting default image...");
-        try {
-          const response = await supabase.functions.invoke('get-default-event-image', {
-            body: { 
-              title: data.title, 
-              description: data.description 
-            }
-          });
-          
-          if (response.data?.imageUrl) {
-            imageUrl = response.data.imageUrl;
-            console.log("Got default image:", imageUrl);
-          }
-        } catch (error) {
-          console.error("Failed to get default image:", error);
-          // Continue without default image
-        }
+        // Skip default image for now to prevent hanging - can be added back later
+        console.log("No image provided, proceeding without default image");
+        imageUrl = null;
       }
 
       const eventData = {
         title: data.title,
         description: data.description || null,
         location: data.location,
-        start_date: data.start_date,
-        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
+        start_date: data.start_date.includes('T') ? data.start_date + ':00.000Z' : data.start_date,
+        end_date: data.end_date && data.end_date.trim() !== '' ? 
+          (data.end_date.includes('T') ? data.end_date + ':00.000Z' : data.end_date) : null,
         calendar_type: data.calendar_type,
         status: data.status,
         host_name: data.host_name,
@@ -388,8 +374,9 @@ const Admin = () => {
         title: data.title,
         description: data.description || null,
         location: data.location,
-        start_date: data.start_date,
-        end_date: data.end_date && data.end_date.trim() !== '' ? data.end_date : null,
+        start_date: data.start_date.includes('T') ? data.start_date + ':00.000Z' : data.start_date,
+        end_date: data.end_date && data.end_date.trim() !== '' ? 
+          (data.end_date.includes('T') ? data.end_date + ':00.000Z' : data.end_date) : null,
         calendar_type: data.calendar_type,
         status: data.status,
         host_name: data.host_name,

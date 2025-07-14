@@ -14,7 +14,10 @@ import {
   Sparkles, 
   ChevronRight,
   Clock,
-  MapPin
+  MapPin,
+  UserPlus,
+  GraduationCap,
+  TreePine
 } from "lucide-react";
 
 interface Event {
@@ -130,15 +133,15 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Community Values Section */}
+      {/* What We Do Section */}
       <section className="py-20 bg-gradient-community">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">
-              Our Community Values
+              What We Do in San Francisco
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Founded on principles of unity, justice, and service to humanity
+              Building stronger communities through meaningful action and connection
             </p>
           </div>
 
@@ -146,14 +149,13 @@ const Home = () => {
             <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105">
               <CardHeader className="text-center">
                 <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-primary-foreground" />
+                  <UserPlus className="w-8 h-8 text-primary-foreground" />
                 </div>
-                <CardTitle className="text-xl">Unity in Diversity</CardTitle>
+                <CardTitle className="text-xl">Community Building</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-center">
-                  Celebrating the beautiful diversity of humanity while fostering 
-                  genuine unity and understanding across all backgrounds, cultures, and beliefs.
+                  We foster inclusive spaces where people of all backgrounds come together to build community through devotional gatherings, study circles, and service projects.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -161,14 +163,13 @@ const Home = () => {
             <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105">
               <CardHeader className="text-center">
                 <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-8 h-8 text-primary-foreground" />
+                  <GraduationCap className="w-8 h-8 text-primary-foreground" />
                 </div>
-                <CardTitle className="text-xl">Spiritual Growth</CardTitle>
+                <CardTitle className="text-xl">Education</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-center">
-                  Nurturing the spiritual development of individuals and families 
-                  through prayer, study, and reflection on sacred writings and teachings.
+                  We offer spiritual education for children, junior youth empowerment programs, and adult study circles focused on applying spiritual principles to everyday life.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -176,14 +177,13 @@ const Home = () => {
             <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105">
               <CardHeader className="text-center">
                 <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-8 h-8 text-primary-foreground" />
+                  <TreePine className="w-8 h-8 text-primary-foreground" />
                 </div>
-                <CardTitle className="text-xl">Service to Humanity</CardTitle>
+                <CardTitle className="text-xl">Social Action</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-center">
-                  Contributing to the betterment of society through acts of service, 
-                  social action, and efforts to promote justice and equality.
+                  We engage in service projects and social action initiatives aimed at contributing to the betterment of our neighborhoods and addressing social issues.
                 </CardDescription>
               </CardContent>
             </Card>

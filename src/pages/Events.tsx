@@ -41,43 +41,76 @@ const Events = () => {
   const [showRSVPModal, setShowRSVPModal] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const { data: events, isLoading, error } = useQuery({
+  const { data: events, isLoading, error, refetch } = useQuery<Event[]>({
     queryKey: ["events", searchTerm, calendarFilter],
-    queryFn: async () => {
+    queryFn: async (): Promise<Event[]> => {
       console.log("🔍 Starting events query with filters:", { searchTerm, calendarFilter });
       
-      let query = supabase
-        .from("events")
-        .select("*")
-        .eq("status", "published")
-        .order("start_date", { ascending: true });
-
-      if (searchTerm) {
-        query = query.or(
-          `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`
-        );
-      }
-
-      if (calendarFilter !== "all") {
-        query = query.eq("calendar_type", calendarFilter as any);
-      }
-
-      const { data, error } = await query;
+      // Add a timeout promise to prevent hanging queries
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Query timeout after 10 seconds")), 10000)
+      );
       
-      if (error) {
-        console.error("❌ Query error:", error);
-        throw error;
-      }
+      const queryPromise = (async (): Promise<Event[]> => {
+        let query = supabase
+          .from("events")
+          .select(`
+            id,
+            title,
+            description,
+            location,
+            start_date,
+            end_date,
+            calendar_type,
+            featured_image_url,
+            host_name,
+            host_email,
+            status,
+            slug,
+            created_at,
+            created_by
+          `)
+          .eq("status", "published")
+          .order("start_date", { ascending: true })
+          .limit(50); // Add a reasonable limit
 
-      console.log("✅ Events loaded:", data?.length || 0);
-      
-      return data?.map(event => ({
-        ...event,
-        _count: { rsvps: 0 }
-      })) || [];
+        if (searchTerm) {
+          query = query.or(
+            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`
+          );
+        }
+
+        if (calendarFilter !== "all") {
+          query = query.eq("calendar_type", calendarFilter as any);
+        }
+
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error("❌ Query error:", error);
+          throw error;
+        }
+
+        console.log("✅ Events loaded:", data?.length || 0);
+        
+        return data?.map(event => ({
+          ...event,
+          _count: { rsvps: 0 }
+        })) || [];
+      })();
+
+      // Race between the query and timeout
+      return Promise.race([queryPromise, timeoutPromise]);
     },
-    retry: 1,
-    staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error) => {
+      console.log(`🔄 Query retry ${failureCount}, error:`, error.message);
+      return failureCount < 2; // Only retry twice
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    throwOnError: false, // Don't throw errors, handle them gracefully
   });
 
   const handleRSVP = (event: Event) => {
@@ -204,17 +237,30 @@ END:VCALENDAR`;
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Community Events</h1>
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-destructive font-medium">Unable to load events</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Error: {error.message || 'Unknown error occurred'}
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 max-w-md mx-auto">
+              <p className="text-destructive font-medium mb-2">Unable to load events</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {error.message.includes('timeout') 
+                  ? 'The request timed out. Please try again.' 
+                  : `Error: ${error.message || 'Unknown error occurred'}`
+                }
               </p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-              >
-                Retry
-              </button>
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => refetch()} 
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Retrying...' : 'Try Again'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.reload()} 
+                  className="w-full"
+                >
+                  Refresh Page
+                </Button>
+              </div>
             </div>
           </div>
         </div>

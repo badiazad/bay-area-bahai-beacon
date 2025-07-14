@@ -23,9 +23,11 @@ import {
 interface Event {
   id: string;
   title: string;
-  excerpt: string;
-  published_at: string;
-  type: string;
+  description: string;
+  start_date: string;
+  location: string;
+  calendar_type: string;
+  host_name: string;
 }
 
 interface Post {
@@ -37,20 +39,20 @@ interface Post {
 }
 
 const Home = () => {
-  const [recentEvents, setRecentEvents] = useState<Event[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        // Fetch recent events
+        // Fetch upcoming events from the events table
         const { data: eventsData } = await supabase
-          .from("content")
-          .select("id, title, excerpt, published_at, type")
-          .eq("type", "event")
+          .from("events")
+          .select("id, title, description, start_date, location, calendar_type, host_name")
           .eq("status", "published")
-          .order("published_at", { ascending: false })
+          .gte("start_date", new Date().toISOString()) // Only future events
+          .order("start_date", { ascending: true })
           .limit(3);
 
         // Fetch recent posts
@@ -62,7 +64,7 @@ const Home = () => {
           .order("published_at", { ascending: false })
           .limit(3);
 
-        setRecentEvents(eventsData || []);
+        setUpcomingEvents(eventsData || []);
         setRecentPosts(postsData || []);
       } catch (error) {
         console.error("Error fetching content:", error);
@@ -74,12 +76,35 @@ const Home = () => {
     fetchContent();
   }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatEventDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  const formatPostDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const getCalendarTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      devotional: "bg-blue-100 text-blue-800",
+      youth_class: "bg-purple-100 text-purple-800",
+      childrens_class: "bg-yellow-100 text-yellow-800",
+      study_circle: "bg-green-100 text-green-800",
+      holy_day: "bg-red-100 text-red-800",
+      community_gathering: "bg-indigo-100 text-indigo-800",
+      other: "bg-gray-100 text-gray-800",
+    };
+    return colors[type] || colors.other;
   };
 
   return (
@@ -191,78 +216,61 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Upcoming Events Section */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-4xl font-bold text-foreground mb-4">
-                Upcoming Events
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Join us for these community gatherings and activities
-              </p>
+      {/* Upcoming Events Section - Only show if there are upcoming events */}
+      {upcomingEvents.length > 0 && (
+        <section className="py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-center mb-12">
+              <div>
+                <h2 className="text-4xl font-bold text-foreground mb-4">
+                  Upcoming Events
+                </h2>
+                <p className="text-xl text-muted-foreground">
+                  Join us for these community gatherings and activities
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/events">
+                  View All Events
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link to="/events">
-                View All Events
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
 
-          {isLoading ? (
             <div className="grid md:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-4 bg-muted rounded w-3/4"></div>
-                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-3 bg-muted rounded mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-2/3"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : recentEvents.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6">
-              {recentEvents.map((event) => (
+              {upcomingEvents.map((event) => (
                 <Card key={event.id} className="shadow-soft hover:shadow-medium transition-all duration-300">
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        Event
+                      <Badge className={getCalendarTypeColor(event.calendar_type)}>
+                        {event.calendar_type.replace('_', ' ')}
                       </Badge>
                     </div>
                     <CardTitle className="text-lg">{event.title}</CardTitle>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Clock className="w-4 h-4 mr-1" />
-                      {formatDate(event.published_at)}
+                      {formatEventDate(event.start_date)}
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      {event.location}
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <Users className="w-4 h-4 mr-1" />
+                      Host: {event.host_name}
                     </div>
                   </CardHeader>
                   <CardContent>
                     <CardDescription>
-                      {event.excerpt || "Join us for this special community event."}
+                      {event.description || "Join us for this special community event."}
                     </CardDescription>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          ) : (
-            <Card className="shadow-soft">
-              <CardContent className="text-center py-12">
-                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <CardDescription className="text-lg">
-                  No upcoming events at the moment. Check back soon for new community gatherings!
-                </CardDescription>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* Community Activities Section */}
       <section className="py-20 bg-gradient-community">

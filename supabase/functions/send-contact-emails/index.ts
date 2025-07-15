@@ -80,7 +80,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p style="color: #333; line-height: 1.6;">
                 Dear ${submission.name},<br><br>
                 We're delighted that you've reached out to our community! Your message is important to us, 
-                and we'll get back to you within 24 hours.
+                and we'll get back to you in the next few days.
               </p>
             </div>
 
@@ -96,14 +96,6 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
             </div>
 
-            <div style="background: #f0f7f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #1a5d1a; margin-top: 0;">What's Next?</h3>
-              <ul style="color: #333; line-height: 1.6;">
-                <li>A community member will contact you within 24 hours</li>
-                <li>We'll provide information about upcoming gatherings</li>
-                ${submission.interest ? `<li>You'll receive details about activities related to your interest: <strong>${submission.interest}</strong></li>` : ''}
-              </ul>
-            </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
               <p style="color: #666; font-size: 14px;">

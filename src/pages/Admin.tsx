@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
+import PageEditor from "@/components/admin/PageEditor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -892,7 +893,34 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="content">
-            <div>Content management coming soon...</div>
+            <div className="space-y-6">
+              <h3 className="text-2xl font-semibold">Content Management</h3>
+              
+              <Tabs defaultValue="home" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="home">Home Page</TabsTrigger>
+                  <TabsTrigger value="community-building">Community Building</TabsTrigger>
+                  <TabsTrigger value="education">Education</TabsTrigger>
+                  <TabsTrigger value="social-action">Social Action</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="home" className="mt-6">
+                  <PageEditor pageSlug="home" pageName="Home Page" />
+                </TabsContent>
+                
+                <TabsContent value="community-building" className="mt-6">
+                  <PageEditor pageSlug="community-building" pageName="Community Building" />
+                </TabsContent>
+                
+                <TabsContent value="education" className="mt-6">
+                  <PageEditor pageSlug="education" pageName="Education" />
+                </TabsContent>
+                
+                <TabsContent value="social-action" className="mt-6">
+                  <PageEditor pageSlug="social-action" pageName="Social Action" />
+                </TabsContent>
+              </Tabs>
+            </div>
           </TabsContent>
 
           <TabsContent value="users">

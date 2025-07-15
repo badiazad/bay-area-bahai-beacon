@@ -9,6 +9,9 @@ import Events from "./pages/Events";
 import Admin from "./pages/Admin";
 import AuthPage from "./components/auth/AuthPage";
 import NotFound from "./pages/NotFound";
+import CommunityBuilding from "./pages/CommunityBuilding";
+import Education from "./pages/Education";
+import SocialAction from "./pages/SocialAction";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +27,9 @@ const App = () => (
           <Route path="/events" element={<Events />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/community-building" element={<CommunityBuilding />} />
+          <Route path="/education" element={<Education />} />
+          <Route path="/social-action" element={<SocialAction />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

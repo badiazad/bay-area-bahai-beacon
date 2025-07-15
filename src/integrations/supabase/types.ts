@@ -338,6 +338,42 @@ export type Database = {
         }
         Relationships: []
       }
+      page_content: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string
+          featured_image_url: string | null
+          id: string
+          meta_description: string | null
+          page_slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by: string
+          featured_image_url?: string | null
+          id?: string
+          meta_description?: string | null
+          page_slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string
+          featured_image_url?: string | null
+          id?: string
+          meta_description?: string | null
+          page_slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

@@ -44,25 +44,37 @@ const Events = () => {
   const { data: events, isLoading, error, refetch } = useQuery<Event[]>({
     queryKey: ["events", searchTerm, calendarFilter],
     queryFn: async (): Promise<Event[]> => {
-      console.log("🔍 Starting simplified events query");
+      console.log("🔍 Starting events query with timeout protection");
       
       try {
-        // Use a much simpler query first
-        const { data, error } = await supabase
-          .from("events")
-          .select("*")
-          .eq("status", "published")
-          .order("start_date", { ascending: true });
+        // Create a timeout promise
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Query timeout after 8 seconds')), 8000);
+        });
         
-        if (error) {
-          console.error("❌ Query error:", error);
-          throw error;
-        }
+        // Create the actual query promise
+        const queryPromise = (async () => {
+          const { data, error } = await supabase
+            .from("events")
+            .select("*")
+            .eq("status", "published")
+            .order("start_date", { ascending: true })
+            .limit(50); // Add reasonable limit
+          
+          if (error) {
+            console.error("❌ Supabase query error:", error);
+            throw error;
+          }
 
-        console.log("✅ Events loaded:", data?.length || 0);
+          console.log("✅ Events loaded successfully:", data?.length || 0);
+          return data || [];
+        })();
         
-        // Apply filters in JavaScript instead of in the database query
-        let filteredEvents = data || [];
+        // Race between query and timeout
+        const rawEvents = await Promise.race([queryPromise, timeoutPromise]);
+        
+        // Apply client-side filtering
+        let filteredEvents = rawEvents;
         
         if (searchTerm) {
           const searchLower = searchTerm.toLowerCase();
@@ -84,14 +96,14 @@ const Events = () => {
           _count: { rsvps: 0 }
         }));
         
-      } catch (error) {
-        console.error("💥 Query function error:", error);
+      } catch (error: any) {
+        console.error("💥 Events query error:", error);
         throw error;
       }
     },
-    retry: 1,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    retry: 2,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000,    // 5 minutes
     refetchOnWindowFocus: false,
   });
 

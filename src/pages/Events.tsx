@@ -42,70 +42,79 @@ const Events = () => {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const { data: events, isLoading, error, refetch } = useQuery<Event[]>({
-    queryKey: ["events", searchTerm, calendarFilter],
+    queryKey: ["events"],
     queryFn: async (): Promise<Event[]> => {
-      console.log("🔍 Starting events query with timeout protection");
+      console.log("🔍 Fetching events from database");
       
       try {
-        // Create a timeout promise
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Query timeout after 8 seconds')), 8000);
-        });
-        
-        // Create the actual query promise
-        const queryPromise = (async () => {
-          const { data, error } = await supabase
-            .from("events")
-            .select("*")
-            .eq("status", "published")
-            .order("start_date", { ascending: true })
-            .limit(50); // Add reasonable limit
-          
-          if (error) {
-            console.error("❌ Supabase query error:", error);
-            throw error;
-          }
+        let query = supabase
+          .from("events")
+          .select("*")
+          .eq("status", "published")
+          .order("start_date", { ascending: true })
+          .limit(20); // Reduced limit for faster loading
 
-          console.log("✅ Events loaded successfully:", data?.length || 0);
-          return data || [];
-        })();
-        
-        // Race between query and timeout
-        const rawEvents = await Promise.race([queryPromise, timeoutPromise]);
-        
-        // Apply client-side filtering
-        let filteredEvents = rawEvents;
-        
-        if (searchTerm) {
-          const searchLower = searchTerm.toLowerCase();
-          filteredEvents = filteredEvents.filter(event => 
-            event.title?.toLowerCase().includes(searchLower) ||
-            event.description?.toLowerCase().includes(searchLower) ||
-            event.location?.toLowerCase().includes(searchLower)
-          );
-        }
-        
+        // Apply database-level filtering for better performance
         if (calendarFilter !== "all") {
-          filteredEvents = filteredEvents.filter(event => 
-            event.calendar_type === calendarFilter
-          );
+          query = query.eq("calendar_type", calendarFilter as any);
+        }
+
+        if (searchTerm) {
+          query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`);
         }
         
-        return filteredEvents.map(event => ({
-          ...event,
-          _count: { rsvps: 0 }
-        }));
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error("❌ Database error:", error);
+          throw new Error(`Failed to load events: ${error.message}`);
+        }
+
+        console.log("✅ Events loaded:", data?.length || 0);
+        return data || [];
         
       } catch (error: any) {
-        console.error("💥 Events query error:", error);
+        console.error("💥 Query failed:", error);
         throw error;
       }
     },
-    retry: 2,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000,    // 5 minutes
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+    enabled: true, // Always enabled
   });
+
+  // Separate query for search/filter to avoid blocking initial load
+  const { data: filteredEvents } = useQuery<Event[]>({
+    queryKey: ["events-filtered", searchTerm, calendarFilter],
+    queryFn: async (): Promise<Event[]> => {
+      if (!searchTerm && calendarFilter === "all") {
+        return events || [];
+      }
+      
+      let query = supabase
+        .from("events")
+        .select("*")
+        .eq("status", "published")
+        .order("start_date", { ascending: true })
+        .limit(20);
+
+      if (calendarFilter !== "all") {
+        query = query.eq("calendar_type", calendarFilter as any);
+      }
+
+      if (searchTerm) {
+        query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`);
+      }
+      
+      const { data, error } = await query;
+      return data || [];
+    },
+    enabled: !!(searchTerm || calendarFilter !== "all"),
+    staleTime: 30 * 1000, // 30 seconds for search results
+  });
+
+  const displayEvents = filteredEvents || events;
 
   const handleRSVP = (event: Event) => {
     setSelectedEvent(event);
@@ -323,10 +332,10 @@ END:VCALENDAR`;
 
         {/* Content */}
         {viewMode === "calendar" ? (
-          <EventCalendarView events={events || []} onEventSelect={handleEventSelect} />
+          <EventCalendarView events={displayEvents || []} onEventSelect={handleEventSelect} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {events?.map((event) => (
+            {displayEvents?.map((event) => (
               <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 {event.featured_image_url && (
                   <div className="aspect-video overflow-hidden">
@@ -423,7 +432,7 @@ END:VCALENDAR`;
           </div>
         )}
 
-        {events?.length === 0 && (
+        {displayEvents?.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No events found matching your criteria.</p>
           </div>

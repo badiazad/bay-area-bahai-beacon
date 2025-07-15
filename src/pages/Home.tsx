@@ -171,47 +171,53 @@ const Home = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-                  <UserPlus className="w-8 h-8 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-xl">Community Building</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center">
-                  We foster inclusive spaces where people of all backgrounds come together to build community through devotional gatherings, study circles, and service projects.
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link to="/community-building" className="block">
+              <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
+                    <UserPlus className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <CardTitle className="text-xl">Community Building</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-center">
+                    We foster inclusive spaces where people of all backgrounds come together to build community through devotional gatherings, study circles, and service projects.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-                  <GraduationCap className="w-8 h-8 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-xl">Education</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center">
-                  We offer spiritual education for children, junior youth empowerment programs, and adult study circles focused on applying spiritual principles to everyday life.
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link to="/education" className="block">
+              <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
+                    <GraduationCap className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <CardTitle className="text-xl">Education</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-center">
+                    We offer spiritual education for children, junior youth empowerment programs, and adult study circles focused on applying spiritual principles to everyday life.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TreePine className="w-8 h-8 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-xl">Social Action</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center">
-                  We engage in service projects and social action initiatives aimed at contributing to the betterment of our neighborhoods and addressing social issues.
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link to="/social-action" className="block">
+              <Card className="shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
+                    <TreePine className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <CardTitle className="text-xl">Social Action</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-center">
+                    We engage in service projects and social action initiatives aimed at contributing to the betterment of our neighborhoods and addressing social issues.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
